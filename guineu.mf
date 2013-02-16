@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.8.2
+Created-By: 1.6.0_22-b22 (Sun Microsystems Inc.)
+Built-By: bicha
+Class-Path: . lib/JRI.jar lib/JRIEngine.jar lib/Jama-1.0.2.jar lib/REn
+ gine.jar lib/commons-logging-1.0.4.jar lib/commons-math-2.2.jar lib/d
+ om4j-1.6.1.jar lib/flanagan.jar lib/gdswing.jar lib/gslibml.jar lib/i
+ Text-2.1.1.jar lib/javaGD.jar lib/javacsv.jar lib/javastat.jar lib/ja
+ xen-1.1.jar lib/jchempaint-2.5.8.jar lib/jcommon-1.0.13.jar lib/jcomm
+ on-serializer-0.2.0.jar lib/jcommon-xml-1.0.13.jar lib/jfreechart-1.0
+ .14.jar lib/jhall.jar lib/jmprojection.jar lib/ojdbc14.jar lib/ojdbc1
+ 4_g.jar lib/ojdbc14dms.jar lib/ojdbc14dms_g.jar lib/orai18n.jar lib/o
+ stermillerutils_1_06_01.jar lib/poi-3.7-20101029.jar lib/sunutils.jar
+  lib/weka.jar
+

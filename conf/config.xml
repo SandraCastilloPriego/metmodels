@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+    <modules>
+        <module class="MM.modules.file.openfile.OpenBasicFileModule">
+            <parameters>
+                <parameter name="File name">
+                    <file>/home/scsandra/Documents/Cellfactory/model/pruebas/ANIGER.xml</file>
+                    <file>/home/scsandra/Documents/Cellfactory/model/pruebas/Tree.xml</file>
+                    <file>/home/scsandra/Documents/Cellfactory/model/pruebas/iIN800.xml</file>
+                    <file>/home/scsandra/Documents/Cellfactory/model/pruebas/yeast_6.03_cobra.xml</file>
+                </parameter>
+            </parameters>
+        </module>
+        <module class="MM.modules.file.utils.compare_reactions.CompareReactionsModule">
+            <parameters>
+                <parameter name="File name">/home/scsandra/Documents/Cellfactory/model/comparison/Tree-Yeast2.csv</parameter>
+                <parameter name="Compounds removed from the comparison of the reactions">
+                    <item>C00001</item>
+                    <item>C00007</item>
+                    <item>C00011</item>
+                </parameter>
+            </parameters>
+        </module>
+        <module class="MM.modules.file.utils.search_reaction.SearchReactionsModule">
+            <parameters>
+                <parameter name="Reaction from model: "/>
+                <parameter name="Id of the reaction">R04420,R03657,R07273,R04238,R03992,R01183,R07091,R05590,R05591</parameter>
+                <parameter name="Search in model: "/>
+                <parameter name="Compounds removed from the comparison of the reactions">
+                    <item>C00001</item>
+                    <item>C00002</item>
+                    <item>C00003</item>
+                    <item>C00004</item>
+                    <item>C00005</item>
+                    <item>C00006</item>
+                    <item>C00007</item>
+                    <item>C00008</item>
+                    <item>C00009</item>
+                    <item>C00010</item>
+                    <item>C00011</item>
+                    <item>C00012</item>
+                    <item>C00013</item>
+                    <item>C00014</item>
+                    <item>C00015</item>
+                    <item>C00016</item>
+                    <item>C00017</item>
+                    <item>C00080</item>
+                </parameter>
+            </parameters>
+        </module>
+        <module class="MM.modules.file.utils.get_ebi_ids.GetEBIIDSModule">
+            <parameters/>
+        </module>
+        <module class="ParameterPath">
+            <parameters/>
+        </module>
+    </modules>
+</configuration>
