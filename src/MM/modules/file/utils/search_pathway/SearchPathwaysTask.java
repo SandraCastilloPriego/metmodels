@@ -50,6 +50,7 @@ public class SearchPathwaysTask extends AbstractTask {
         HashMap<Species, List<String>> speciesidFrom, speciesidWhere;
         List<Reaction> areNotIn2, areNotIn1;
         HashMap<Reaction, Reaction> common;
+        List<String> used;
 
         public SearchPathwaysTask(Dataset[] datasets, ParameterSet parameters) {
                 this.datasets = datasets;
@@ -64,6 +65,7 @@ public class SearchPathwaysTask extends AbstractTask {
                 this.names2 = new HashMap<>();
                 this.speciesidFrom = new HashMap<>();
                 this.speciesidWhere = new HashMap<>();
+                this.used = new ArrayList<>();
         }
 
         @Override
@@ -95,17 +97,17 @@ public class SearchPathwaysTask extends AbstractTask {
                 setStatus(TaskStatus.PROCESSING);
                 try {
                         if (getStatus() == TaskStatus.PROCESSING) {
-                                        
+
                                 SBMLDocument doc1 = null, doc2 = null;
-                                for(Dataset d :datasets){
-                                        if(this.datasetFrom.contains(d.getDatasetName())){
+                                for (Dataset d : datasets) {
+                                        if (this.datasetFrom.contains(d.getDatasetName())) {
                                                 doc1 = d.getDocument();
                                         }
-                                        if(this.datasetWhere.contains(d.getDatasetName())){
+                                        if (this.datasetWhere.contains(d.getDatasetName())) {
                                                 doc2 = d.getDocument();
                                         }
                                 }
-                                
+
                                 Model m1 = doc1.getModel();
                                 Model m2 = doc2.getModel();
 
@@ -125,13 +127,6 @@ public class SearchPathwaysTask extends AbstractTask {
                                         progress = (float) (done / total);
                                 }
 
-                               /* this.message = "Getting ChEbi ids..";
-                                if (this.datasetWhere.equals(m1.getId())) {
-                                        this.getIDs(this.species, 1);
-                                } else {
-                                        this.getIDs(this.species, 2);
-                                }*/
-
 
                                 for (String reactionId : this.reactionsIds) {
                                         Reaction r = null;
@@ -146,22 +141,24 @@ public class SearchPathwaysTask extends AbstractTask {
                                                 Species s = sr.getSpeciesInstance();
                                                 List<String> id = checkSpecieID(s);
                                                 speciesidFrom.put(s, id);
-                                                /*if (this.datasetFrom.equals(m1.getId())) {
-                                                        this.getIDs(s, 1);
-                                                } else {
-                                                        this.getIDs(s, 2);
-                                                }*/
+                                                /*
+                                                 * if
+                                                 * (this.datasetFrom.equals(m1.getId()))
+                                                 * { this.getIDs(s, 1); } else {
+                                                 * this.getIDs(s, 2); }
+                                                 */
                                         }
                                         ListOf<SpeciesReference> products = r.getListOfProducts();
                                         for (SpeciesReference sr : products) {
                                                 Species s = sr.getSpeciesInstance();
                                                 List<String> id = checkSpecieID(s);
                                                 speciesidFrom.put(s, id);
-                                               /* if (this.datasetFrom.equals(m1.getId())) {
-                                                        this.getIDs(s, 1);
-                                                } else {
-                                                        this.getIDs(s, 2);
-                                                }*/
+                                                /*
+                                                 * if
+                                                 * (this.datasetFrom.equals(m1.getId()))
+                                                 * { this.getIDs(s, 1); } else {
+                                                 * this.getIDs(s, 2); }
+                                                 */
                                         }
 
                                         ListOf<Reaction> reactionList;
@@ -174,11 +171,11 @@ public class SearchPathwaysTask extends AbstractTask {
                                         for (Reaction r2 : reactionList) {
                                                 Boolean isThere = comparingReactions(r, speciesidFrom, r2, speciesidWhere);
                                                 if (isThere) {
-                                                        this.printReaction(r, 1);
-                                                        this.printReaction(r2, 2);
-                                                        System.out.println("------------------------------------------------------------------------");
-                                                        System.out.println("------------------------------------------------------------------------");
 
+                                                        System.out.println("Reaction: " + reactionId);
+                                                        printPathway(r2, m2);
+
+                                                        System.out.println("--------------------------------");
                                                 }
                                         }
                                 }
@@ -531,7 +528,6 @@ public class SearchPathwaysTask extends AbstractTask {
 //                }
 //
 //        }
-
 //        public String getChEbi(String KeggID) {
 //                BufferedReader in = null;
 //                try {
@@ -560,7 +556,6 @@ public class SearchPathwaysTask extends AbstractTask {
 //                        return null;
 //                }
 //        }
-
         private void showResults() {
                 this.message = "Printing..";
                 double total = areNotIn2.size() + areNotIn1.size() + common.size();
@@ -659,5 +654,47 @@ public class SearchPathwaysTask extends AbstractTask {
                         results.concat("-Name: " + s.getName() + "\n");
                 }
                 results.concat("------------------------------------------------------------------------\n");
+        }
+
+        private void printPathway(Reaction r2, Model m) {
+                ListOf<SpeciesReference> products = r2.getListOfProducts();
+
+                ListOf<Reaction> rs = m.getListOfReactions();
+
+
+                for (SpeciesReference pref : products) {
+                        Species p = pref.getSpeciesInstance();
+                        List<String> ids = this.speciesidWhere.get(p);
+                        boolean cont = false;
+                        for (String id : ids) {
+                                for (String reactant : this.removedCompounds) {
+                                        if (id.contains(reactant)) {
+                                                cont = true;
+                                        }
+                                }
+                        }
+                        if (cont) {
+                                continue;
+                        }
+
+                        for (Reaction r : rs) {
+                                if (r != r2) {
+                                        ListOf<SpeciesReference> reactants = r.getListOfReactants();
+                                        for (SpeciesReference reactantRef : reactants) {
+                                                Species reactant = reactantRef.getSpeciesInstance();
+                                                if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
+                                                        System.out.println(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId());
+                                                        this.used.add(r2.getId());
+                                                        if (!this.used.contains(r.getId())) {
+                                                                printPathway(r, m);
+                                                        }
+                                                }
+
+                                        }
+                                }
+
+                        }
+
+                }
         }
 }

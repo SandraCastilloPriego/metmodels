@@ -21,6 +21,7 @@ package MM.main;
 import MM.modules.file.openfile.OpenBasicFileModule;
 import MM.modules.file.utils.compare_reactions.CompareReactionsModule;
 import MM.modules.file.utils.get_ebi_ids.GetEBIIDSModule;
+import MM.modules.file.utils.search_pathway.SearchPathwaysModule;
 import MM.modules.file.utils.search_reaction.SearchReactionsModule;
 
 /**
@@ -32,7 +33,8 @@ public class MMModulesList {
               OpenBasicFileModule.class,
               CompareReactionsModule.class,
               SearchReactionsModule.class,
-              GetEBIIDSModule.class
+              GetEBIIDSModule.class,
+              SearchPathwaysModule.class
 
         };
 }
