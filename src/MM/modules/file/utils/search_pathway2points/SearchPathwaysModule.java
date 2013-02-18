@@ -15,7 +15,7 @@
  * MetModels; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
-package MM.modules.file.utils.search_reaction;
+package MM.modules.file.utils.search_pathway2points;
 
 import MM.main.MMCore;
 import MM.modules.MMModuleCategory;
@@ -27,14 +27,14 @@ import MM.taskcontrol.Task;
  *
  * @author scsandra
  */
-public class SearchReactionsModule implements MMProcessingModule {
+public class SearchPathwaysModule implements MMProcessingModule {
 
-        public static final String MODULE_NAME = "Search Reactions";
+        public static final String MODULE_NAME = "Search Pathways";
         
-        private  SearchReactionsParameters parameters;
+        private  SearchPathwaysParameters parameters;
         @Override
         public ParameterSet getParameterSet() {
-                return new SearchReactionsParameters();
+                return new SearchPathwaysParameters();
         }
 
         @Override
@@ -45,8 +45,8 @@ public class SearchReactionsModule implements MMProcessingModule {
         @Override
         public Task[] runModule(ParameterSet parameters) {
                 // prepare a new group of tasks             
-                Task tasks[] = new SearchReactionsTask[1];
-                tasks[0] = new SearchReactionsTask(MMCore.getDesktop().getSelectedDataFiles(), parameters);
+                Task tasks[] = new SearchPathwaysTask[1];
+                tasks[0] = new SearchPathwaysTask(MMCore.getDesktop().getSelectedDataFiles(), parameters);
 
                 MMCore.getTaskController().addTasks(tasks);
 

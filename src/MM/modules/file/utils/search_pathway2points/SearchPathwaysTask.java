@@ -15,7 +15,7 @@
  * MetModels; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
-package MM.modules.file.utils.search_pathway;
+package MM.modules.file.utils.search_pathway2points;
 
 import MM.data.Dataset;
 import MM.main.MMCore;
@@ -44,6 +44,7 @@ public class SearchPathwaysTask extends AbstractTask {
         private String message = "Search for Pathways... ";
         private String datasetFrom, datasetWhere, reactions;
         private String[] removedCompounds, reactionsIds;
+        private HashMap<Reaction, String> names1, names2;
         private ListOf<Species> species;
         private HashMap<Species, List<String>> speciesidFrom, speciesidWhere;
         private List<String> used;
@@ -60,6 +61,8 @@ public class SearchPathwaysTask extends AbstractTask {
 
                 this.reactionsIds = this.reactions.split(",");
 
+                this.names1 = new HashMap<>();
+                this.names2 = new HashMap<>();
                 this.speciesidFrom = new HashMap<>();
                 this.speciesidWhere = new HashMap<>();
                 

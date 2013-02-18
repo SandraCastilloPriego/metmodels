@@ -15,7 +15,7 @@
  * MetModels; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
-package MM.modules.file.utils.search_reaction;
+package MM.modules.file.utils.search_pathway2points;
 
 import MM.data.Dataset;
 import MM.main.MMCore;
@@ -26,7 +26,7 @@ import MM.parameters.parametersType.MultiChoiceParameter;
 import MM.parameters.parametersType.StringParameter;
 import MM.util.dialogs.ExitCode;
 
-public class SearchReactionsParameters extends SimpleParameterSet {        
+public class SearchPathwaysParameters extends SimpleParameterSet {        
 
         public static final ComboParameter dataFrom = new ComboParameter("Reaction from model: ", "Choose the model containing the reaction", new String[0]);
         public static final StringParameter id = new StringParameter("Id of the reaction", "Write the id of the reaction");
@@ -36,7 +36,7 @@ public class SearchReactionsParameters extends SimpleParameterSet {
         public static final MultiChoiceParameter removing = new MultiChoiceParameter("Compounds removed from the comparison of the reactions",
                 "Compounds removed from the comparison of the reactions", choices);
 
-        public SearchReactionsParameters() {
+        public SearchPathwaysParameters() {
                 super(new Parameter[]{dataFrom, id, dataWhere, removing});
         }
 
@@ -48,8 +48,8 @@ public class SearchReactionsParameters extends SimpleParameterSet {
                         names[i] = data[i].getDatasetName();
                 }
 
-                getParameter(SearchReactionsParameters.dataFrom).setChoices(names);
-                getParameter(SearchReactionsParameters.dataWhere).setChoices(names);                
+                getParameter(SearchPathwaysParameters.dataFrom).setChoices(names);
+                getParameter(SearchPathwaysParameters.dataWhere).setChoices(names);                
                
                 return super.showSetupDialog();
         }
