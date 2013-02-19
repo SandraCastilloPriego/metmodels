@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -88,7 +89,11 @@ public class GetEBIIDSTask extends AbstractTask {
                                         boolean isKeggId = false;
                                         boolean KeggCompound = false;
                                         String KeggId = "";
+                                        CVTerm term = null;
                                         for (CVTerm t : terms) {
+                                                if (t.isBiologicalQualifier() && t.getBiologicalQualifierType() == CVTerm.Qualifier.BQB_IS) {
+                                                        term = t;
+                                                }
                                                 if (t.toString().contains("CHEBI")) {
                                                         isChebiId = true;
                                                 }
@@ -104,17 +109,21 @@ public class GetEBIIDSTask extends AbstractTask {
                                                 KeggId = s.getId();
                                         }
                                         if (!isChebiId && isKeggId) {
-                                                String newChebi = this.getChEbi(KeggId);
-                                                CVTerm t = new CVTerm();
-                                                t.setQualifierType(CVTerm.Type.BIOLOGICAL_QUALIFIER);
-                                                t.setBiologicalQualifierType(CVTerm.Qualifier.BQB_IS);
-                                                if (newChebi != null) {
-                                                        t.addResourceURI("http://identifiers.org/obo.chebi/CHEBI:" + newChebi);
+                                                List<String> newChebis = this.getChEbi(KeggId);
+                                                if (term == null) {
+                                                        term = new CVTerm();
+                                                        term.setQualifierType(CVTerm.Type.BIOLOGICAL_QUALIFIER);
+                                                        term.setBiologicalQualifierType(CVTerm.Qualifier.BQB_IS);
+                                                }
+                                                for (String newChebi : newChebis) {
+                                                        if (newChebi != null) {
+                                                                term.addResourceURI("http://identifiers.org/obo.chebi/CHEBI:" + newChebi);
+                                                        }
                                                 }
                                                 if (!KeggCompound) {
-                                                        t.addResourceURI("http://identifiers.org/kegg.compound/" + KeggId);
-                                                        s.addCVTerm(t);
+                                                        term.addResourceURI("http://identifiers.org/kegg.compound/" + KeggId);
                                                 }
+                                                a.addCVTerm(term);
                                         }
                                         done++;
                                         this.progress = (float) (done / total);
@@ -128,28 +137,30 @@ public class GetEBIIDSTask extends AbstractTask {
                 setStatus(TaskStatus.FINISHED);
         }
 
-        public String getChEbi(String KeggID) {
+        public List<String> getChEbi(String KeggID) {
                 BufferedReader in = null;
+                List<String> chebis = new ArrayList<>();
                 try {
                         String query = "http://rest.kegg.jp/conv/chebi/" + KeggID;
                         URL kegg = new URL(query);
                         URLConnection yc = kegg.openConnection();
                         in = new BufferedReader(new InputStreamReader(
                                 yc.getInputStream()));
-                        String inputLine = in.readLine();
-
-                        in.close();
-                        try {
-                                if (!inputLine.isEmpty()) {
-                                        inputLine = inputLine.substring(inputLine.indexOf("chebi:") + 6);
-                                        return inputLine;
-                                } else {
-                                        return null;
+                        String inputLine = null;
+                        while ((inputLine = in.readLine()) != null) {
+                                try {
+                                        if (!inputLine.isEmpty()) {
+                                                inputLine = inputLine.substring(inputLine.indexOf("chebi:") + 6);
+                                                chebis.add(inputLine);
+                                        } else {
+                                        }
+                                } catch (Exception e) {
                                 }
-                        } catch (Exception e) {
-                                return null;
                         }
 
+                        in.close();
+
+                        return chebis;
                 } catch (IOException ex) {
                         return null;
                 }

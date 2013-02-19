@@ -53,7 +53,7 @@ public class GetEBIIDSModule implements MMProcessingModule {
 
         @Override
         public MMModuleCategory getModuleCategory() {
-                return MMModuleCategory.UTILS;
+                return MMModuleCategory.IDENTIFICATION;
         }
 
         @Override
