@@ -48,7 +48,7 @@ public class CompareReactionsTask extends AbstractTask {
         ListOf<Species> species1, species2;
         HashMap<Species, List<String>> speciesid1, speciesid2;
         List<Reaction> areNotIn2, areNotIn1;
-        HashMap<Reaction, Reaction> common, common2;
+        HashMap<Reaction, List<Reaction>> common, common2;
         private File fileName;
 
         public CompareReactionsTask(Dataset[] datasets, ParameterSet parameters) {
@@ -161,13 +161,21 @@ public class CompareReactionsTask extends AbstractTask {
                                         for (Reaction r2 : reactions2) {
                                                 isThere = comparingReactionsRRPP(r1, speciesid1, r2, speciesid2);
                                                 if (isThere) {
-                                                        common.put(r1, r2);
-                                                        break;
+                                                        List<Reaction> reactions = common.get(r1);
+                                                        if (reactions == null) {
+                                                                reactions = new ArrayList<>();
+                                                        }
+                                                        reactions.add(r2);
+                                                        common.put(r1, reactions);
                                                 } else {
                                                         isThere = comparingReactionsRPRP(r1, speciesid1, r2, speciesid2);
                                                         if (isThere) {
-                                                                common.put(r1, r2);
-                                                                break;
+                                                                List<Reaction> reactions = common.get(r1);
+                                                                if (reactions == null) {
+                                                                        reactions = new ArrayList<>();
+                                                                }
+                                                                reactions.add(r2);
+                                                                common.put(r1, reactions);
                                                         }
                                                 }
                                         }
@@ -184,11 +192,21 @@ public class CompareReactionsTask extends AbstractTask {
                                         for (Reaction r1 : reactions1) {
                                                 isThere = comparingReactionsRRPP(r2, speciesid2, r1, speciesid1);
                                                 if (isThere) {
-                                                        common2.put(r2, r1);
+                                                        List<Reaction> reactions = common2.get(r2);
+                                                        if (reactions == null) {
+                                                                reactions = new ArrayList<>();
+                                                        }
+                                                        reactions.add(r1);
+                                                        common2.put(r2, reactions);
                                                 } else {
                                                         isThere = comparingReactionsRPRP(r1, speciesid1, r2, speciesid2);
                                                         if (isThere) {
-                                                                common2.put(r2, r1);
+                                                                List<Reaction> reactions = common2.get(r2);
+                                                                if (reactions == null) {
+                                                                        reactions = new ArrayList<>();
+                                                                }
+                                                                reactions.add(r1);
+                                                                common2.put(r2, reactions);
                                                         }
                                                 }
                                         }
@@ -325,28 +343,26 @@ public class CompareReactionsTask extends AbstractTask {
                 ListOf<SpeciesReference> products1 = r1.getListOfProducts();
                 ListOf<SpeciesReference> products2 = r2.getListOfProducts();
 
+                int compoundsR1 = 0, compoundsR2 = 0;
+
                 for (SpeciesReference sr1 : reactans1) {
 
                         List<String> ids = ids1.get(sr1.getSpeciesInstance());
 
-                        // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.equals(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        // Remove the compounds that shouldn't be taken into account                       
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr2 : reactans2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                        compoundsR1++;
                                         for (String idFrom2 : idsFrom2) {
                                                 if (id.equals(idFrom2)) {
                                                         isThere = true;
@@ -365,24 +381,20 @@ public class CompareReactionsTask extends AbstractTask {
 
                         List<String> ids = ids2.get(sr2.getSpeciesInstance());
 
-                        // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.equals(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        // Remove the compounds that shouldn't be taken into account                                       
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr1 : reactans1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                        compoundsR2++;
                                         for (String idFrom1 : idsFrom1) {
                                                 if (id.equals(idFrom1)) {
                                                         isThere = true;
@@ -398,24 +410,20 @@ public class CompareReactionsTask extends AbstractTask {
                 for (SpeciesReference sr1 : products1) {
                         List<String> ids = ids1.get(sr1.getSpeciesInstance());
 
-                        // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.contains(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        // Remove the compounds that shouldn't be taken into account                         
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr2 : products2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                        compoundsR1++;
                                         for (String idFrom2 : idsFrom2) {
                                                 if (id.equals(idFrom2)) {
                                                         isThere = true;
@@ -435,24 +443,19 @@ public class CompareReactionsTask extends AbstractTask {
                 for (SpeciesReference sr2 : products2) {
                         List<String> ids = ids2.get(sr2.getSpeciesInstance());
 
-                        // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.contains(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        // Remove the compounds that shouldn't be taken into account                         
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
-
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr1 : products1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                        compoundsR2++;
                                         for (String idFrom1 : idsFrom1) {
                                                 if (id.contains(idFrom1) || idFrom1.contains(id)) {
                                                         isThere = true;
@@ -466,7 +469,23 @@ public class CompareReactionsTask extends AbstractTask {
                 }
 
 
-                return true;
+                if (compoundsR1 > 0 && compoundsR2 > 0) {
+                        return true;
+                } else {
+                        return false;
+                }
+        }
+
+        private boolean hasToBeRemoved(List<String> ids) {
+                boolean hasToBeRemoved = false;
+                for (String id : ids) {
+                        for (String reactant : this.removedCompounds) {
+                                if (id.equals(reactant)) {
+                                        hasToBeRemoved = true;
+                                }
+                        }
+                }
+                return hasToBeRemoved;
         }
 
         private boolean comparingReactionsRPRP(Reaction r1, HashMap<Species, List<String>> ids1, Reaction r2, HashMap<Species, List<String>> ids2) {
@@ -476,28 +495,26 @@ public class CompareReactionsTask extends AbstractTask {
                 ListOf<SpeciesReference> products1 = r1.getListOfProducts();
                 ListOf<SpeciesReference> products2 = r2.getListOfProducts();
 
+                int compoundsR1 = 0, compoundsR2 = 0;
+
                 for (SpeciesReference sr1 : reactans1) {
 
                         List<String> ids = ids1.get(sr1.getSpeciesInstance());
 
-                        // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.equals(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        // Remove the compounds that shouldn't be taken into account                         
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr2 : products2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                        compoundsR1++;
                                         for (String idFrom2 : idsFrom2) {
                                                 if (id.equals(idFrom2)) {
                                                         isThere = true;
@@ -517,23 +534,19 @@ public class CompareReactionsTask extends AbstractTask {
                         List<String> ids = ids2.get(sr2.getSpeciesInstance());
 
                         // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.equals(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr1 : products1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                        compoundsR2++;
                                         for (String idFrom1 : idsFrom1) {
                                                 if (id.equals(idFrom1)) {
                                                         isThere = true;
@@ -550,23 +563,19 @@ public class CompareReactionsTask extends AbstractTask {
                         List<String> ids = ids1.get(sr1.getSpeciesInstance());
 
                         // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.equals(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr2 : reactans2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                        compoundsR1++;
                                         for (String idFrom2 : idsFrom2) {
                                                 if (id.equals(idFrom2)) {
                                                         isThere = true;
@@ -587,23 +596,19 @@ public class CompareReactionsTask extends AbstractTask {
                         List<String> ids = ids2.get(sr2.getSpeciesInstance());
 
                         // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.equals(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
                         for (SpeciesReference sr1 : reactans1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                        compoundsR2++;
                                         for (String idFrom1 : idsFrom1) {
                                                 if (id.equals(idFrom1)) {
                                                         isThere = true;
@@ -616,8 +621,11 @@ public class CompareReactionsTask extends AbstractTask {
                         }
                 }
 
-
-                return true;
+                if (compoundsR1 > 0 && compoundsR2 > 0) {
+                        return true;
+                } else {
+                        return false;
+                }
         }
 
         private List<String> checkSpecieID(Species s1) {
@@ -818,11 +826,12 @@ public class CompareReactionsTask extends AbstractTask {
                         while (it.hasNext()) {
                                 Map.Entry pairs = (Map.Entry) it.next();
                                 Reaction r1 = (Reaction) pairs.getKey();
-                                Reaction r2 = (Reaction) pairs.getValue();
-                                if (this.common2.containsKey(r2)&& this.common2.get(r2)==r1) {
+                                List<Reaction> r2s = (List<Reaction>) pairs.getValue();
+                                for (Reaction r2 : r2s) {
                                         data = this.printReactionCSV(r1, r2);
                                         w.writeRecord(data);
                                 }
+
                                 it.remove(); // avoids a ConcurrentModificationException
                         }
 
@@ -984,37 +993,44 @@ public class CompareReactionsTask extends AbstractTask {
         }
 
         private void addChebToRemoved() {
-                HashMap<String, String> values = new HashMap<>();
-                values.put("C00001", "15377");
-                values.put("C00002", "15422");
-                values.put("C00003", "15846");
-                values.put("C00004", "16908");
-                values.put("C00005", "16474");
-                values.put("C00006", "18009");
-                values.put("C00007", "15379");
-                values.put("C00008", "16761");
-                values.put("C00009", "18367,26078");
-                values.put("C00010", "15346");
-                values.put("C00011", "16526");
-                values.put("C00012", "16670");
-                values.put("C00013", "18361,29888");
-                values.put("C00014", "16134");
-                values.put("C00015", "17659");
-                values.put("C00016", "16238");
-                values.put("C00017", "16541");
-                values.put("C00080", "15378");
                 List<String> chebR = new ArrayList<>();
-                for (String r : this.removedCompounds) {
-                        if (values.containsKey(r)) {
-                                String v = values.get(r);
-                                if (v.contains(",")) {
-                                        String[] vs = v.split(",");
-                                        chebR.addAll(Arrays.asList(vs));
-                                } else {
-                                        chebR.add(v);
-                                }
+
+                for (String kegg : this.removedCompounds) {
+                        List<String> chebis = getChEbi(kegg);
+                        for (String chebi : chebis) {
+                                chebR.add(chebi);
                         }
                 }
+
                 this.removedCompounds = ArrayUtils.addAll(this.removedCompounds, chebR.toArray(new String[0]));
+        }
+
+        public List<String> getChEbi(String KeggID) {
+                BufferedReader in = null;
+                List<String> chebis = new ArrayList<>();
+                try {
+                        String query = "http://rest.kegg.jp/conv/chebi/" + KeggID;
+                        URL kegg = new URL(query);
+                        URLConnection yc = kegg.openConnection();
+                        in = new BufferedReader(new InputStreamReader(
+                                yc.getInputStream()));
+                        String inputLine = null;
+                        while ((inputLine = in.readLine()) != null) {
+                                try {
+                                        if (!inputLine.isEmpty()) {
+                                                inputLine = inputLine.substring(inputLine.indexOf("chebi:") + 6);
+                                                chebis.add(inputLine);
+                                        } else {
+                                        }
+                                } catch (Exception e) {
+                                }
+                        }
+
+                        in.close();
+
+                        return chebis;
+                } catch (IOException ex) {
+                        return null;
+                }
         }
 }
