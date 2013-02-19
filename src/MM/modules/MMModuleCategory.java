@@ -23,6 +23,7 @@ public enum MMModuleCategory {
 	CONFIGURATION("Configuration"),
 	FILE("File"),
         UTILS("Utils"),
+        IDENTIFICATION("Identification"),
 	HELPSYSTEM("Help");
 
 	private final String name;

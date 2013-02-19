@@ -24,6 +24,6 @@ package MM.main;
  */
 public class MMVersion {
 
-	public static final String MM = "1.0.2";
+	public static final String MM = "1.0.1";
 
 }

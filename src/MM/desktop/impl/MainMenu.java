@@ -37,7 +37,7 @@ import javax.swing.*;
  */
 public class MainMenu extends JMenuBar implements ActionListener {
 
-        private JMenu fileMenu, utilsMenu, helpMenu;
+        private JMenu fileMenu, utilsMenu, identificationMenu, helpMenu;
         private JWindowsMenu windowsMenu;
         private JMenuItem showAbout;
         private Map<JMenuItem, MMProcessingModule> moduleMenuItems = new HashMap<JMenuItem, MMProcessingModule>();
@@ -51,6 +51,10 @@ public class MainMenu extends JMenuBar implements ActionListener {
                 utilsMenu = new JMenu("Utils");
                 utilsMenu.setMnemonic(KeyEvent.VK_U);
                 add(utilsMenu);
+                
+                identificationMenu = new JMenu("Identification");
+                identificationMenu.setMnemonic(KeyEvent.VK_I);
+                add(identificationMenu);
 
                 JDesktopPane mainDesktopPane = ((MainWindow) MMCore.getDesktop()).getDesktopPane();
                 windowsMenu = new JWindowsMenu(mainDesktopPane);
@@ -86,7 +90,11 @@ public class MainMenu extends JMenuBar implements ActionListener {
                         case UTILS:
                                 utilsMenu.add(newItem);
                                 break;
-
+                                
+                        case IDENTIFICATION:
+                                identificationMenu.add(newItem);
+                                break;
+                                
                         case HELPSYSTEM:
                                 helpMenu.add(newItem);
                                 break;
@@ -101,7 +109,10 @@ public class MainMenu extends JMenuBar implements ActionListener {
                         case UTILS:
                                 utilsMenu.addSeparator();
                                 break;
-
+                        case IDENTIFICATION:
+                                identificationMenu.addSeparator();
+                                break;
+                                
                         case HELPSYSTEM:
                                 helpMenu.addSeparator();
                                 break;

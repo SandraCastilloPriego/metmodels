@@ -19,5 +19,5 @@ package MM.desktop;
 
 public enum MMMenu {
 
-        FILE, ALGORITHMS, HELPSYSTEM,
+        FILE, ALGORITHMS, IDENTIFICATION, HELPSYSTEM,
 };
