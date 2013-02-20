@@ -22,6 +22,7 @@ import MM.main.MMCore;
 import MM.parameters.ParameterSet;
 import MM.taskcontrol.AbstractTask;
 import MM.taskcontrol.TaskStatus;
+import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,6 +30,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
 import javax.swing.JInternalFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -262,15 +265,7 @@ public class SearchReactionsTask extends AbstractTask {
                 }
         }
 
-        private String checkName(String name, Reaction r) {
-                if (name.isEmpty()) {
-                        //String newName = getNameEnzime(r.getId());
-                        return r.getId();
-                        // return newName;
-                } else {
-                        return name;
-                }
-        }
+       
 
         private boolean comparingReactions(Reaction r1, HashMap<Species, List<String>> ids1, Reaction r2, HashMap<Species, List<String>> ids2) {
                 ListOf<SpeciesReference> reactans1 = r1.getListOfReactants();
@@ -424,35 +419,7 @@ public class SearchReactionsTask extends AbstractTask {
         }
 
         private List<String> checkSpecieID(Species s1) {
-                List<String> ids = new ArrayList<>();
-                /*
-                 * try { SpeciesType s = m.getSpeciesType("meta_"+s1.getId());
-                 * String annotationType = s.getAnnotationString(); if
-                 * (annotationType.contains("kegg.compound")) { annotationType =
-                 * annotationType.substring(annotationType.indexOf("kegg"),
-                 * annotationType.length()); annotationType =
-                 * annotationType.substring(annotationType.indexOf("C"),
-                 * annotationType.indexOf("C") + 6); ids.add(annotationType); }
-                 * annotationType = s.getAnnotationString(); if
-                 * (annotationType.contains("CHEBI")) { annotationType =
-                 * annotationType.substring(annotationType.indexOf("CHEBI"),
-                 * annotationType.length()); annotationType =
-                 * annotationType.substring(annotationType.indexOf(":") + 1,
-                 * annotationType.indexOf(":") + 6); ids.add(annotationType); }
-                 * annotationType = s.getAnnotationString(); if
-                 * (annotationType.contains("kegg.genes")) { annotationType =
-                 * annotationType.substring(annotationType.indexOf("sce"),
-                 * annotationType.length()); annotationType =
-                 * annotationType.substring(annotationType.indexOf(":") + 1,
-                 * annotationType.indexOf(":") + 6); ids.add(annotationType); }
-                 * annotationType = s.getAnnotationString(); if
-                 * (annotationType.contains("uniprot")) { annotationType =
-                 * annotationType.substring(annotationType.indexOf("uniprot"),
-                 * annotationType.length()); annotationType =
-                 * annotationType.substring(annotationType.indexOf("/") + 1,
-                 * annotationType.indexOf(":") + 7); ids.add(annotationType); }
-                 * } catch (Exception e) { }
-                 */
+                List<String> ids = new ArrayList<>();              
 
 
                 if (s1.getId().contains("C")) {
@@ -561,60 +528,59 @@ public class SearchReactionsTask extends AbstractTask {
 //                }
 //        }
 
-        private void showResults() {
-                this.message = "Printing..";
-                double total = areNotIn2.size() + areNotIn1.size() + common.size();
-                double done = 0.0;
-                JTextField t = new JTextField();
-                String results = "";
-                results.concat("List of reactions not present in " + datasets[1].getDatasetName() + "\n");
-
-                for (Reaction r : areNotIn2) {
-                        this.printReaction(r, 1, results);
-                        done++;
-                        progress = (float) (done / total);
-                        results.concat("------------------------------------------------------------------------\n");
+        private void showResults(Reaction r, int dataset, String results) {
+                this.message = "Printing..";                
+                JTextArea t = new JTextArea();
+                JScrollPane panel = new JScrollPane(t);
+                JInternalFrame internalFrame = new JInternalFrame("Results", true, true, true, true);
+                internalFrame.add(panel);
+                internalFrame.setSize(new Dimension(700, 500));
+                MMCore.getDesktop().addInternalFrame(internalFrame);
+                
+                ListOf<SpeciesReference> reactans = r.getListOfReactants();
+                ListOf<SpeciesReference> products = r.getListOfProducts();
+                if (dataset == 1) {
+                        results.concat("Name: " + names1.get(r) + " - ID: "
+                                + r.getId() + "\n");
+                } else {
+                        results.concat("Name: " + names2.get(r) + " - ID: "
+                                + r.getId() + "\n");
                 }
+                results.concat("Reactans\n");
 
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-
-                results.concat("List of reactions not present in " + datasets[0].getDatasetName() + "\n");
-                for (Reaction r : areNotIn1) {
-                        this.printReaction(r, 2, results);
-                        done++;
-                        progress = (float) (done / total);
-                        results.concat("------------------------------------------------------------------------\n");
+                for (SpeciesReference reactan : reactans) {
+                        Species s = reactan.getSpeciesInstance();
+                        List<String> ids;
+                        if (dataset == 1) {
+                                ids = speciesidFrom.get(s);
+                        } else {
+                                ids = speciesidWhere.get(s);
+                        }
+                        results.concat("ID: ");
+                        for (String id : ids) {
+                                System.out.print(id + ",");
+                        }
+                        results.concat("-Name: " + s.getName() + "\n");
                 }
-
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-                results.concat("------------------------------------------------------------------------\n");
-
-                results.concat("Common reactions\n");
-
-                Iterator it = common.entrySet().iterator();
-                while (it.hasNext()) {
-                        Map.Entry pairs = (Map.Entry) it.next();
-                        Reaction r1 = (Reaction) pairs.getKey();
-                        Reaction r2 = (Reaction) pairs.getValue();
-                        this.printReaction(r1, 1, results);
-                        this.printReaction(r2, 2, results);
-                        results.concat("------------------------------------------------------------------------\n");
-                        results.concat("------------------------------------------------------------------------\n");
-                        it.remove(); // avoids a ConcurrentModificationException
+                results.concat("Products\n");
+                for (SpeciesReference product : products) {
+                        Species s = product.getSpeciesInstance();
+                        List<String> ids;
+                        if (dataset == 1) {
+                                ids = speciesidFrom.get(s);
+                        } else {
+                                ids = speciesidWhere.get(s);
+                        }
+                        results.concat("ID: ");
+                        for (String id : ids) {
+                                results.concat(id + ",");
+                        }
+                        results.concat("-Name: " + s.getName() + "\n");
                 }
+                results.concat("------------------------------------------------------------------------\n");
 
                 t.setText(results);
-                JInternalFrame internalFrame = new JInternalFrame("Results", true, true, true, true);
-                internalFrame.add(t);
-                MMCore.getDesktop().addInternalFrame(internalFrame);
-                internalFrame.setVisible(true);
+                
         }
 
         public void printReaction(Reaction r, int dataset, String results) {

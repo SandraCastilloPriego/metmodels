@@ -27,14 +27,13 @@ import MM.taskcontrol.Task;
  *
  * @author scsandra
  */
-public class SearchPathwaysModule implements MMProcessingModule {
+public class SearchPathwaysTwoPointsModule implements MMProcessingModule {
 
-        public static final String MODULE_NAME = "Search Pathways";
-        
-        private  SearchPathwaysParameters parameters;
+        public static final String MODULE_NAME = "Search Pathways giving two points";        
+    
         @Override
         public ParameterSet getParameterSet() {
-                return new SearchPathwaysParameters();
+                return new SearchPathwaysTwoPointsParameters();
         }
 
         @Override
@@ -45,8 +44,8 @@ public class SearchPathwaysModule implements MMProcessingModule {
         @Override
         public Task[] runModule(ParameterSet parameters) {
                 // prepare a new group of tasks             
-                Task tasks[] = new SearchPathwaysTask[1];
-                tasks[0] = new SearchPathwaysTask(MMCore.getDesktop().getSelectedDataFiles(), parameters);
+                Task tasks[] = new SearchPathwaysTwoPointsTask[1];
+                tasks[0] = new SearchPathwaysTwoPointsTask(MMCore.getDesktop().getSelectedDataFiles(), parameters);
 
                 MMCore.getTaskController().addTasks(tasks);
 
