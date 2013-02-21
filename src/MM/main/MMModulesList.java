@@ -22,6 +22,7 @@ import MM.modules.file.openfile.OpenBasicFileModule;
 import MM.modules.file.utils.compare_reactions.CompareReactionsModule;
 import MM.modules.file.utils.get_ebi_ids.GetEBIIDSModule;
 import MM.modules.file.utils.get_pubchem_ids.GetPubchemIDSModule;
+import MM.modules.file.utils.printReactions.PrintReactionsModule;
 import MM.modules.file.utils.search_pathway.SearchPathwaysModule;
 import MM.modules.file.utils.search_pathway2points.SearchPathwaysTwoPointsModule;
 import MM.modules.file.utils.search_reaction.SearchReactionsModule;
@@ -38,7 +39,8 @@ public class MMModulesList {
               GetEBIIDSModule.class,
               GetPubchemIDSModule.class,
               SearchPathwaysModule.class,
-              SearchPathwaysTwoPointsModule.class
+              SearchPathwaysTwoPointsModule.class,
+              PrintReactionsModule.class
 
         };
 }
