@@ -31,7 +31,6 @@ public class SearchReactionsModule implements MMProcessingModule {
 
         public static final String MODULE_NAME = "Search Reactions";
         
-        private  SearchReactionsParameters parameters;
         @Override
         public ParameterSet getParameterSet() {
                 return new SearchReactionsParameters();

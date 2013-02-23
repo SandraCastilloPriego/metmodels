@@ -77,7 +77,6 @@ public class GetEBIIDSTask extends AbstractTask {
                                 Model model = dataset.getDocument().getModel();
 
                                 ListOf<Species> species = model.getListOfSpecies();
-                                // model.unsetListOfSpeciesTypes();
                                 double total = species.size();
                                 double done = 0.0;
                                 for (Species s : species) {

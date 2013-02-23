@@ -47,13 +47,12 @@ public class CompareReactionsTask extends AbstractTask {
         HashMap<Reaction, String> names1, names2;
         ListOf<Species> species1, species2;
         HashMap<Species, List<String>> speciesid1, speciesid2;
-        List<Reaction> areNotIn2, areNotIn1;
         HashMap<Reaction, List<Reaction>> common, common2;
         private File fileName;
 
         public CompareReactionsTask(Dataset[] datasets, ParameterSet parameters) {
                 this.datasets = datasets;
-                this.removedCompounds = (String[]) parameters.getParameter(CompareReactionsParameters.removing).getChoices();
+                this.removedCompounds = (String[]) parameters.getParameter(CompareReactionsParameters.removing).getValue();
                 this.fileName = (File) parameters.getParameter(CompareReactionsParameters.fileName).getValue();
                 this.names1 = new HashMap<>();
                 this.names2 = new HashMap<>();
@@ -106,9 +105,6 @@ public class CompareReactionsTask extends AbstractTask {
                                 common = new HashMap<>();
                                 common2 = new HashMap<>();
 
-                                areNotIn2 = new ArrayList<>();
-                                areNotIn1 = new ArrayList<>();
-
                                 this.message = "Identifying reactions in Kegg..";
                                 double total = reactions1.size() + reactions2.size();
                                 double done = 0.0;
@@ -147,11 +143,6 @@ public class CompareReactionsTask extends AbstractTask {
                                 }
 
 
-                                // this.message = "Getting Chebi IDs in Kegg for Model 1..";
-                                // this.getIDs(this.species1, 1);
-                                //  this.message = "Getting Chebi IDs in Kegg for Model 2..";
-                                // this.getIDs(this.species2, 2);
-
                                 progress = 0.0f;
                                 this.message = "Comparing names..";
                                 done = 0.0;
@@ -160,6 +151,7 @@ public class CompareReactionsTask extends AbstractTask {
                                         boolean isThere = false;
                                         for (Reaction r2 : reactions2) {
                                                 isThere = comparingReactionsRRPP(r1, speciesid1, r2, speciesid2);
+
                                                 if (isThere) {
                                                         List<Reaction> reactions = common.get(r1);
                                                         if (reactions == null) {
@@ -176,98 +168,39 @@ public class CompareReactionsTask extends AbstractTask {
                                                                 }
                                                                 reactions.add(r2);
                                                                 common.put(r1, reactions);
-                                                        }
+                                                        }/*else{
+                                                                System.out.println(r1.getId());
+                                                        }*/
+                                                        
                                                 }
                                         }
-                                        if (!isThere) {
-                                                areNotIn2.add(r1);
-                                        }
+
                                         done++;
                                         progress = (float) (done / total);
                                 }
 
 
-                                for (Reaction r2 : reactions2) {
-                                        boolean isThere = false;
-                                        for (Reaction r1 : reactions1) {
-                                                isThere = comparingReactionsRRPP(r2, speciesid2, r1, speciesid1);
-                                                if (isThere) {
-                                                        List<Reaction> reactions = common2.get(r2);
-                                                        if (reactions == null) {
-                                                                reactions = new ArrayList<>();
-                                                        }
-                                                        reactions.add(r1);
-                                                        common2.put(r2, reactions);
-                                                } else {
-                                                        isThere = comparingReactionsRPRP(r1, speciesid1, r2, speciesid2);
-                                                        if (isThere) {
-                                                                List<Reaction> reactions = common2.get(r2);
-                                                                if (reactions == null) {
-                                                                        reactions = new ArrayList<>();
-                                                                }
-                                                                reactions.add(r1);
-                                                                common2.put(r2, reactions);
-                                                        }
-                                                }
-                                        }
-                                        if (!isThere) {
-                                                areNotIn1.add(r2);
-                                        }
-                                        done++;
-                                        progress = (float) (done / total);
+                                /*
+                                 * for (Reaction r2 : reactions2) { boolean
+                                 * isThere = false; for (Reaction r1 :
+                                 * reactions1) { isThere =
+                                 * comparingReactionsRRPP(r2, speciesid2, r1,
+                                 * speciesid1); if (isThere) { List<Reaction>
+                                 * reactions = common2.get(r2); if (reactions ==
+                                 * null) { reactions = new ArrayList<>(); }
+                                 * reactions.add(r1); common2.put(r2,
+                                 * reactions); } else { isThere =
+                                 * comparingReactionsRPRP(r1, speciesid1, r2,
+                                 * speciesid2); if (isThere) { List<Reaction>
+                                 * reactions = common2.get(r2); if (reactions ==
+                                 * null) { reactions = new ArrayList<>(); }
+                                 * reactions.add(r1); common2.put(r2,
+                                 * reactions); } } } done++; progress = (float)
+                                 * (done / total);
                                 }
+                                 */
 
-
-                                //     showResults();
-                                printResultsFile();
-
-//                                this.message = "Printing..";
-//                                total = areNotIn2.size() + areNotIn1.size() + common.size();
-//                                done = 0.0;
-//
-//
-//                                System.out.println("List of reactions not present in " + datasets[1].getDatasetName());
-//                                for (Reaction r : areNotIn2) {
-//                                        this.printReaction(r, 1);
-//                                        done++;
-//                                        progress = (float) (done / total);
-//                                        System.out.println("------------------------------------------------------------------------");
-//                                }
-//
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//
-//                                System.out.println("List of reactions not present in " + datasets[0].getDatasetName());
-//                                for (Reaction r : areNotIn1) {
-//                                        this.printReaction(r, 2);
-//                                        done++;
-//                                        progress = (float) (done / total);
-//                                        System.out.println("------------------------------------------------------------------------");
-//                                }
-//
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//                                System.out.println("------------------------------------------------------------------------");
-//
-//                                System.out.println("Common reactions");
-//
-//                                Iterator it = common.entrySet().iterator();
-//                                while (it.hasNext()) {
-//                                        Map.Entry pairs = (Map.Entry) it.next();
-//                                        Reaction r1 = (Reaction) pairs.getKey();
-//                                        Reaction r2 = (Reaction) pairs.getValue();
-//                                        this.printReaction(r1, 1);
-//                                        this.printReaction(r2, 2);
-//                                        System.out.println("------------------------------------------------------------------------");
-//                                        System.out.println("------------------------------------------------------------------------");
-//                                        it.remove(); // avoids a ConcurrentModificationException
-//                                }
-
+                                printResultsFile(reactions1, reactions2);
 
                         }
                 } catch (Exception ex) {
@@ -277,29 +210,6 @@ public class CompareReactionsTask extends AbstractTask {
                 setStatus(TaskStatus.FINISHED);
         }
 
-        /*
-         * public void printReaction(Reaction r, int dataset) {
-         * ListOf<SpeciesReference> reactans = r.getListOfReactants();
-         * ListOf<SpeciesReference> products = r.getListOfProducts(); if
-         * (dataset == 1) { System.out.println("Name: " + names1.get(r) + " -
-         * ID: " + r.getId()); } else { System.out.println("Name: " +
-         * names2.get(r) + " - ID: " + r.getId()); }
-         * System.out.println("Reactans");
-         *
-         * for (SpeciesReference reactan : reactans) { Species s =
-         * reactan.getSpeciesInstance(); List<String> ids; if (dataset == 1) {
-         * ids = speciesid1.get(s); } else { ids = speciesid2.get(s); }
-         * System.out.print("ID: "); for (String id : ids) { System.out.print(id
-         * + ","); } System.out.print("-Name: " + s.getName() + "\n"); }
-         * System.out.println("Products"); for (SpeciesReference product :
-         * products) { Species s = product.getSpeciesInstance(); List<String>
-         * ids; if (dataset == 1) { ids = speciesid1.get(s); } else { ids =
-         * speciesid2.get(s); } System.out.print("ID: "); for (String id : ids)
-         * { System.out.print(id + ","); } System.out.print("-Name: " +
-         * s.getName() + "\n"); }
-         * System.out.println("------------------------------------------------------------------------");
-         * }
-         */
         public String getNameEnzime(String KeggID) {
                 BufferedReader in = null;
                 try {
@@ -318,7 +228,6 @@ public class CompareReactionsTask extends AbstractTask {
                         if (inputLine == null) {
                                 inputLine = KeggID;
                         }
-                        // System.out.println(inputLine);                        
                         return inputLine;
 
                 } catch (IOException ex) {
@@ -328,9 +237,7 @@ public class CompareReactionsTask extends AbstractTask {
 
         private String checkName(String name, Reaction r) {
                 if (name.isEmpty()) {
-                        //String newName = getNameEnzime(r.getId());
                         return r.getId();
-                        // return newName;
                 } else {
                         return name;
                 }
@@ -669,144 +576,7 @@ public class CompareReactionsTask extends AbstractTask {
                 return ids;
         }
 
-        /*
-         * private void getIDs(ListOf<Species> species, int dataset) { progress
-         * = 0.0f; double total = species.size(); double done = 0.0; for
-         * (Species s : species) { if (s.getId().contains("C")) { List<String>
-         * ids = null; if (dataset == 1) { ids = this.speciesid1.get(s); } else
-         * { ids = this.speciesid2.get(s); } String newName =
-         * getChEbi(s.getId()); if (newName != null) { ids.add(newName); } }
-         * done++; progress = (float) (done / total); } }
-         *
-         */
-//        public String getChEbi(String KeggID) {
-//                BufferedReader in = null;
-//                try {
-//                        String query = "http://rest.kegg.jp/conv/chebi/" + KeggID;
-//                        URL kegg = new URL(query);
-//                        URLConnection yc = kegg.openConnection();
-//                        in = new BufferedReader(new InputStreamReader(yc.getInputStream()));
-//                        String inputLine = in.readLine();
-//
-//                        in.close();
-//                        try {
-//                                if (!inputLine.isEmpty()) {
-//                                        inputLine =
-//                                                inputLine.substring(inputLine.indexOf("chebi:") + 6);
-//                                        return inputLine;
-//                                } else {
-//                                        return null;
-//                                }
-//                        } catch (Exception e) {
-//                                e.printStackTrace();
-//                                return null;
-//                        }
-//
-//                } catch (IOException ex) {
-//                        ex.printStackTrace();
-//                        return null;
-//                }
-//        }
-//        private void showResults() {
-//                this.message = "Printing..";
-//                double total = areNotIn2.size() + areNotIn1.size() + common.size();
-//                double done = 0.0;
-//                JTextField t = new JTextField();
-//                String results = "";
-//                results.concat("List of reactions not present in " + datasets[1].getDatasetName() + "\n");
-//
-//                for (Reaction r : areNotIn2) {
-//                        this.printReaction(r, 1, results);
-//                        done++;
-//                        progress = (float) (done / total);
-//                        results.concat("------------------------------------------------------------------------\n");
-//                }
-//
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//
-//                results.concat("List of reactions not present in " + datasets[0].getDatasetName() + "\n");
-//                for (Reaction r : areNotIn1) {
-//                        this.printReaction(r, 2, results);
-//                        done++;
-//                        progress = (float) (done / total);
-//                        results.concat("------------------------------------------------------------------------\n");
-//                }
-//
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//                results.concat("------------------------------------------------------------------------\n");
-//
-//                results.concat("Common reactions\n");
-//
-//                Iterator it = common.entrySet().iterator();
-//                while (it.hasNext()) {
-//                        Map.Entry pairs = (Map.Entry) it.next();
-//                        Reaction r1 = (Reaction) pairs.getKey();
-//                        Reaction r2 = (Reaction) pairs.getValue();
-//                        this.printReaction(r1, 1, results);
-//                        this.printReaction(r2, 2, results);
-//                        results.concat("------------------------------------------------------------------------\n");
-//                        results.concat("------------------------------------------------------------------------\n");
-//                        it.remove(); // avoids a ConcurrentModificationException
-//                }
-//
-//                t.setText(results);
-//                JInternalFrame internalFrame = new JInternalFrame("Results", true, true, true, true);
-//                internalFrame.add(t);
-//                MMCore.getDesktop().addInternalFrame(internalFrame);
-//                internalFrame.setVisible(true);
-//        }
-//
-//        public void printReaction(Reaction r, int dataset, String results) {
-//                ListOf<SpeciesReference> reactans = r.getListOfReactants();
-//                ListOf<SpeciesReference> products = r.getListOfProducts();
-//                if (dataset == 1) {
-//                        results.concat("Name: " + names1.get(r) + " - ID: "
-//                                + r.getId() + "\n");
-//                } else {
-//                        results.concat("Name: " + names2.get(r) + " - ID: "
-//                                + r.getId() + "\n");
-//                }
-//                results.concat("Reactans\n");
-//
-//                for (SpeciesReference reactan : reactans) {
-//                        Species s = reactan.getSpeciesInstance();
-//                        List<String> ids;
-//                        if (dataset == 1) {
-//                                ids = speciesid1.get(s);
-//                        } else {
-//                                ids = speciesid2.get(s);
-//                        }
-//                        results.concat("ID: ");
-//                        for (String id : ids) {
-//                                System.out.print(id + ",");
-//                        }
-//                        results.concat("-Name: " + s.getName() + "\n");
-//                }
-//                results.concat("Products\n");
-//                for (SpeciesReference product : products) {
-//                        Species s = product.getSpeciesInstance();
-//                        List<String> ids;
-//                        if (dataset == 1) {
-//                                ids = speciesid1.get(s);
-//                        } else {
-//                                ids = speciesid2.get(s);
-//                        }
-//                        results.concat("ID: ");
-//                        for (String id : ids) {
-//                                results.concat(id + ",");
-//                        }
-//                        results.concat("-Name: " + s.getName() + "\n");
-//                }
-//                results.concat("------------------------------------------------------------------------\n");
-//        }
-        private void printResultsFile() {
+        private void printResultsFile(ListOf<Reaction> reactions1, ListOf<Reaction> reactions2) {
                 try {
                         CsvWriter w = new CsvWriter(this.fileName.getAbsolutePath());
                         String[] data = new String[8];
@@ -823,6 +593,8 @@ public class CompareReactionsTask extends AbstractTask {
 
                         //Common reactions
                         Iterator it = common.entrySet().iterator();
+                        List<Reaction> reactionsKey = new ArrayList<>();
+                        List<Reaction> reactionsVal = new ArrayList<>();
                         while (it.hasNext()) {
                                 Map.Entry pairs = (Map.Entry) it.next();
                                 Reaction r1 = (Reaction) pairs.getKey();
@@ -830,22 +602,28 @@ public class CompareReactionsTask extends AbstractTask {
                                 for (Reaction r2 : r2s) {
                                         data = this.printReactionCSV(r1, r2);
                                         w.writeRecord(data);
+                                        reactionsVal.add(r2);
+                                }
+                                if(r2s != null&& r2s.size() > 0){
+                                        reactionsKey.add(r1);
                                 }
 
                                 it.remove(); // avoids a ConcurrentModificationException
                         }
-
-
                         //Reactions only in 1
-                        for (Reaction r : areNotIn2) {
-                                data = this.printReactionCSV(r, 1);
-                                w.writeRecord(data);
+                        for (Reaction r : reactions1) {
+                                if (!reactionsKey.contains(r)) {
+                                        data = this.printReactionCSV(r, 1);
+                                        w.writeRecord(data);
+                                }
                         }
 
                         //Reactions only in 2
-                        for (Reaction r : areNotIn1) {
-                                data = this.printReactionCSV(r, 2);
-                                w.writeRecord(data);
+                        for (Reaction r : reactions2) {
+                                if (!reactionsVal.contains(r)) {
+                                        data = this.printReactionCSV(r, 2);
+                                        w.writeRecord(data);
+                                }
                         }
 
                         w.close();
