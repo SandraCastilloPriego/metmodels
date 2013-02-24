@@ -145,6 +145,7 @@ public class CompareReactionsTask extends AbstractTask {
 
                                 progress = 0.0f;
                                 this.message = "Comparing names..";
+                                total = reactions1.size();
                                 done = 0.0;
 
                                 for (Reaction r1 : reactions1) {
