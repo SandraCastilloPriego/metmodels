@@ -15,7 +15,7 @@
  * MetModels; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
-package MM.modules.file.utils.printReactions;
+package MM.modules.file.utils.printspecies;
 
 import MM.main.MMCore;
 import MM.modules.MMModuleCategory;
@@ -27,13 +27,13 @@ import MM.taskcontrol.Task;
  *
  * @author scsandra
  */
-public class PrintReactionsModule implements MMProcessingModule {
+public class PrintSpeciesModule implements MMProcessingModule {
 
-        public static final String MODULE_NAME = "Print Reactions";        
+        public static final String MODULE_NAME = "Print species";        
        
         @Override
         public ParameterSet getParameterSet() {
-                return new PrintReactionsParameters();
+                return new PrintSpeciesParameters();
         }
 
         @Override
@@ -44,8 +44,8 @@ public class PrintReactionsModule implements MMProcessingModule {
         @Override
         public Task[] runModule(ParameterSet parameters) {
                 // prepare a new group of tasks             
-                Task tasks[] = new PrintReactionsTask[1];
-                tasks[0] = new PrintReactionsTask(MMCore.getDesktop().getSelectedDataFiles(), parameters);
+                Task tasks[] = new PrintSpeciesTask[1];
+                tasks[0] = new PrintSpeciesTask(MMCore.getDesktop().getSelectedDataFiles(), parameters);
 
                 MMCore.getTaskController().addTasks(tasks);
 

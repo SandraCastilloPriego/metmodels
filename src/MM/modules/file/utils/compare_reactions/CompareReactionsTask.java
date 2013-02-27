@@ -169,9 +169,7 @@ public class CompareReactionsTask extends AbstractTask {
                                                                 }
                                                                 reactions.add(r2);
                                                                 common.put(r1, reactions);
-                                                        }/*else{
-                                                                System.out.println(r1.getId());
-                                                        }*/
+                                                        }
                                                         
                                                 }
                                         }

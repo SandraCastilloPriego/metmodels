@@ -15,7 +15,7 @@
  * MetModels; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
-package MM.modules.file.utils.printReactions;
+package MM.modules.file.utils.printreactions;
 
 import MM.data.Dataset;
 import MM.modules.file.utils.compare_reactions.CompareReactionsParameters;
@@ -102,6 +102,7 @@ public class PrintReactionsTask extends AbstractTask {
                                                 s[1] = specie.getMetaId();
                                                 s[2] = specie.getCompartment();
                                                 s[3] = specie.getName();
+                                                s[4] = String.valueOf(specieRef.getCalculatedStoichiometry());
                                                 w.writeRecord(s);
                                         }
                                         
@@ -114,6 +115,7 @@ public class PrintReactionsTask extends AbstractTask {
                                                 s[1] = specie.getMetaId();
                                                 s[2] = specie.getCompartment();
                                                 s[3] = specie.getName();
+                                                s[4] = String.valueOf(specieRef.getCalculatedStoichiometry());
                                                 w.writeRecord(s);
                                         }
 

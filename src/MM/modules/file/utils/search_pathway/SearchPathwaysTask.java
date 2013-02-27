@@ -53,7 +53,7 @@ public class SearchPathwaysTask extends AbstractTask {
 
         public SearchPathwaysTask(Dataset[] datasets, ParameterSet parameters) {
                 this.datasets = datasets;
-                this.removedCompounds = (String[]) parameters.getParameter(SearchPathwaysParameters.removing).getChoices();
+                this.removedCompounds = (String[]) parameters.getParameter(SearchPathwaysParameters.removing).getValue();
                 this.datasetFrom = (String) parameters.getParameter(SearchPathwaysParameters.dataFrom).getValue();
                 this.datasetWhere = (String) parameters.getParameter(SearchPathwaysParameters.dataWhere).getValue();
                 this.reactions = (String) parameters.getParameter(SearchPathwaysParameters.id).getValue();
@@ -62,7 +62,7 @@ public class SearchPathwaysTask extends AbstractTask {
 
                 this.speciesidFrom = new HashMap<>();
                 this.speciesidWhere = new HashMap<>();
-                
+
 
                 this.frame = new JInternalFrame("Result", true, true, true, true);
 
@@ -100,7 +100,7 @@ public class SearchPathwaysTask extends AbstractTask {
                 try {
                         if (getStatus() == TaskStatus.PROCESSING) {
 
-                               
+
                                 frame.setSize(new Dimension(700, 500));
                                 frame.add(this.panel);
 
@@ -140,7 +140,7 @@ public class SearchPathwaysTask extends AbstractTask {
 
                                 for (String reactionId : this.reactionsIds) {
                                         this.used = new ArrayList<>();
-                                        
+
                                         Reaction r = null;
                                         if (this.datasetFrom.equals(m1.getId())) {
                                                 r = m1.getReaction(reactionId);
@@ -169,8 +169,9 @@ public class SearchPathwaysTask extends AbstractTask {
                                         }
 
                                         for (Reaction r2 : reactionList) {
-                                                Boolean isThere = comparingReactions(r, speciesidFrom, r2, speciesidWhere);
-                                                if (isThere) {
+                                                Boolean isThere = comparingReactionsRRPP(r, speciesidFrom, r2, speciesidWhere);
+                                                Boolean isThere2 = comparingReactionsRPRP(r, speciesidFrom, r2, speciesidWhere);
+                                                if (isThere || isThere2) {
                                                         String s = this.tf.getText();
                                                         s = s.concat("Reaction: " + reactionId + "\n");
                                                         System.out.println("Reaction: " + reactionId);
@@ -194,37 +195,35 @@ public class SearchPathwaysTask extends AbstractTask {
                 setStatus(TaskStatus.FINISHED);
         }
 
-        private boolean comparingReactions(Reaction r1, HashMap<Species, List<String>> ids1, Reaction r2, HashMap<Species, List<String>> ids2) {
+        private boolean comparingReactionsRPRP(Reaction r1, HashMap<Species, List<String>> ids1, Reaction r2, HashMap<Species, List<String>> ids2) {
                 ListOf<SpeciesReference> reactans1 = r1.getListOfReactants();
                 ListOf<SpeciesReference> reactans2 = r2.getListOfReactants();
 
                 ListOf<SpeciesReference> products1 = r1.getListOfProducts();
                 ListOf<SpeciesReference> products2 = r2.getListOfProducts();
 
+                int compoundsR1 = 0, compoundsR2 = 0;
+
                 for (SpeciesReference sr1 : reactans1) {
 
                         List<String> ids = ids1.get(sr1.getSpeciesInstance());
 
-                        // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.contains(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        // Remove the compounds that shouldn't be taken into account                         
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
-                        for (SpeciesReference sr2 : reactans2) {
+                        for (SpeciesReference sr2 : products2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                        compoundsR1++;
                                         for (String idFrom2 : idsFrom2) {
-                                                if (id.contains(idFrom2) || idFrom2.contains(id)) {
+                                                if (id.equals(idFrom2)) {
                                                         isThere = true;
                                                 }
                                         }
@@ -242,25 +241,21 @@ public class SearchPathwaysTask extends AbstractTask {
                         List<String> ids = ids2.get(sr2.getSpeciesInstance());
 
                         // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.contains(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
-                        for (SpeciesReference sr1 : reactans1) {
+                        for (SpeciesReference sr1 : products1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                        compoundsR2++;
                                         for (String idFrom1 : idsFrom1) {
-                                                if (id.contains(idFrom1) || idFrom1.contains(id)) {
+                                                if (id.equals(idFrom1)) {
                                                         isThere = true;
                                                 }
                                         }
@@ -275,25 +270,21 @@ public class SearchPathwaysTask extends AbstractTask {
                         List<String> ids = ids1.get(sr1.getSpeciesInstance());
 
                         // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.contains(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
-                        for (SpeciesReference sr2 : products2) {
+                        for (SpeciesReference sr2 : reactans2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                        compoundsR1++;
                                         for (String idFrom2 : idsFrom2) {
-                                                if (id.contains(idFrom2) || idFrom2.contains(id)) {
+                                                if (id.equals(idFrom2)) {
                                                         isThere = true;
                                                 }
                                         }
@@ -312,23 +303,158 @@ public class SearchPathwaysTask extends AbstractTask {
                         List<String> ids = ids2.get(sr2.getSpeciesInstance());
 
                         // Remove the compounds that shouldn't be taken into account
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.contains(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
+                        if (hasToBeRemoved(ids)) {
                                 continue;
                         }
 
                         // Compare the ids of the reactants
                         boolean isThere = false;
-                        for (SpeciesReference sr1 : products1) {
+                        for (SpeciesReference sr1 : reactans1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
                                 for (String id : ids) {
-                                        List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                        compoundsR2++;
+                                        for (String idFrom1 : idsFrom1) {
+                                                if (id.equals(idFrom1)) {
+                                                        isThere = true;
+                                                }
+                                        }
+                                }
+                        }
+                        if (!isThere) {
+                                return false;
+                        }
+                }
+
+                if (compoundsR1 > 0 && compoundsR2 > 0) {
+                        return true;
+                } else {
+                        return false;
+                }
+        }
+
+        private boolean comparingReactionsRRPP(Reaction r1, HashMap<Species, List<String>> ids1, Reaction r2, HashMap<Species, List<String>> ids2) {
+                ListOf<SpeciesReference> reactans1 = r1.getListOfReactants();
+                ListOf<SpeciesReference> reactans2 = r2.getListOfReactants();
+
+                ListOf<SpeciesReference> products1 = r1.getListOfProducts();
+                ListOf<SpeciesReference> products2 = r2.getListOfProducts();
+
+                int compoundsR1 = 0, compoundsR2 = 0;
+
+                for (SpeciesReference sr1 : reactans1) {
+
+                        List<String> ids = ids1.get(sr1.getSpeciesInstance());
+
+                        // Remove the compounds that shouldn't be taken into account                       
+                        if (hasToBeRemoved(ids)) {
+                                continue;
+                        }
+
+                        // Compare the ids of the reactants
+                        boolean isThere = false;
+                        for (SpeciesReference sr2 : reactans2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
+                                for (String id : ids) {
+                                        compoundsR1++;
+                                        for (String idFrom2 : idsFrom2) {
+                                                if (id.equals(idFrom2)) {
+                                                        isThere = true;
+                                                }
+                                        }
+                                }
+                        }
+                        if (!isThere) {
+                                return false;
+                        }
+                }
+
+
+
+                for (SpeciesReference sr2 : reactans2) {
+
+                        List<String> ids = ids2.get(sr2.getSpeciesInstance());
+
+                        // Remove the compounds that shouldn't be taken into account                                       
+                        if (hasToBeRemoved(ids)) {
+                                continue;
+                        }
+
+                        // Compare the ids of the reactants
+                        boolean isThere = false;
+                        for (SpeciesReference sr1 : reactans1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
+                                for (String id : ids) {
+                                        compoundsR2++;
+                                        for (String idFrom1 : idsFrom1) {
+                                                if (id.equals(idFrom1)) {
+                                                        isThere = true;
+                                                }
+                                        }
+                                }
+                        }
+                        if (!isThere) {
+                                return false;
+                        }
+                }
+
+                for (SpeciesReference sr1 : products1) {
+                        List<String> ids = ids1.get(sr1.getSpeciesInstance());
+
+                        // Remove the compounds that shouldn't be taken into account                         
+                        if (hasToBeRemoved(ids)) {
+                                continue;
+                        }
+
+                        // Compare the ids of the reactants
+                        boolean isThere = false;
+                        for (SpeciesReference sr2 : products2) {
+                                List<String> idsFrom2 = ids2.get(sr2.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom2)) {
+                                        continue;
+                                }
+                                for (String id : ids) {
+                                        compoundsR1++;
+                                        for (String idFrom2 : idsFrom2) {
+                                                if (id.equals(idFrom2)) {
+                                                        isThere = true;
+                                                }
+                                        }
+                                }
+                        }
+                        if (!isThere) {
+                                return false;
+                        }
+
+                }
+
+
+
+
+                for (SpeciesReference sr2 : products2) {
+                        List<String> ids = ids2.get(sr2.getSpeciesInstance());
+
+                        // Remove the compounds that shouldn't be taken into account                         
+                        if (hasToBeRemoved(ids)) {
+                                continue;
+                        }
+                        // Compare the ids of the reactants
+                        boolean isThere = false;
+                        for (SpeciesReference sr1 : products1) {
+                                List<String> idsFrom1 = ids1.get(sr1.getSpeciesInstance());
+                                if (hasToBeRemoved(idsFrom1)) {
+                                        continue;
+                                }
+                                for (String id : ids) {
+                                        compoundsR2++;
                                         for (String idFrom1 : idsFrom1) {
                                                 if (id.contains(idFrom1) || idFrom1.contains(id)) {
                                                         isThere = true;
@@ -342,7 +468,23 @@ public class SearchPathwaysTask extends AbstractTask {
                 }
 
 
-                return true;
+                if (compoundsR1 > 0 && compoundsR2 > 0) {
+                        return true;
+                } else {
+                        return false;
+                }
+        }
+
+        private boolean hasToBeRemoved(List<String> ids) {
+                boolean hasToBeRemoved = false;
+                for (String id : ids) {
+                        for (String reactant : this.removedCompounds) {
+                                if (id.equals(reactant)) {
+                                        hasToBeRemoved = true;
+                                }
+                        }
+                }
+                return hasToBeRemoved;
         }
 
         private List<String> checkSpecieID(Species s1) {
@@ -393,36 +535,25 @@ public class SearchPathwaysTask extends AbstractTask {
 
 
                 for (SpeciesReference pref : products) {
-                        Species p = pref.getSpeciesInstance();
-                        List<String> ids = this.speciesidWhere.get(p);
-                        boolean cont = false;
-                        for (String id : ids) {
-                                for (String reactant : this.removedCompounds) {
-                                        if (id.contains(reactant)) {
-                                                cont = true;
-                                        }
-                                }
-                        }
-                        if (cont) {
-                                continue;
-                        }
-
+                        Species p = pref.getSpeciesInstance();                   
                         for (Reaction r : rs) {
                                 if (r != r2) {
                                         ListOf<SpeciesReference> reactants = r.getListOfReactants();
                                         for (SpeciesReference reactantRef : reactants) {
                                                 Species reactant = reactantRef.getSpeciesInstance();
-                                                if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
-                                                        String s = this.tf.getText();
-                                                        
-                                                        s = s.concat(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId() + "\n");
-                                                        this.tf.setText(s);
-                                                        
-                                                        System.out.println(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId());
-                                                       
-                                                        this.used.add(r2.getId());
-                                                        if (!this.used.contains(r.getId())) {
-                                                                printPathway(r, m);
+                                                if (!this.hasToBeRemoved(reactant.getId())) {
+                                                        if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
+                                                                String s = this.tf.getText();
+
+                                                                s = s.concat(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId() + "\n");
+                                                                this.tf.setText(s);
+
+                                                                System.out.println(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId());
+
+                                                                this.used.add(r2.getId());
+                                                                if (!this.used.contains(r.getId())) {
+                                                                        printPathway(r, m);
+                                                                }
                                                         }
                                                 }
 
@@ -432,5 +563,50 @@ public class SearchPathwaysTask extends AbstractTask {
                         }
 
                 }
+                
+                
+                
+                
+                for (SpeciesReference pref : r2.getListOfReactants()) {
+                        Species p = pref.getSpeciesInstance();
+                        
+                        for (Reaction r : rs) {
+                                if (r != r2) {
+                                        ListOf<SpeciesReference> reactants = r.getListOfProducts();
+                                        for (SpeciesReference reactantRef : reactants) {
+                                                Species reactant = reactantRef.getSpeciesInstance();
+                                                if (!this.hasToBeRemoved(reactant.getId())) {
+                                                        if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
+                                                                String s = this.tf.getText();
+
+                                                                s = s.concat(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId() + "\n");
+                                                                this.tf.setText(s);
+
+                                                                System.out.println(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId());
+
+                                                                this.used.add(r2.getId());
+                                                                if (!this.used.contains(r.getId())) {
+                                                                        printPathway(r, m);
+                                                                }
+                                                        }
+                                                }
+
+                                        }
+                                }
+
+                        }
+
+                }
+        }
+
+        private boolean hasToBeRemoved(String id) {
+                boolean hasToBeRemoved = false;
+                for (String reactant : this.removedCompounds) {
+                        if (id.equals(reactant)) {
+                                hasToBeRemoved = true;
+                        }
+                }
+
+                return hasToBeRemoved;
         }
 }

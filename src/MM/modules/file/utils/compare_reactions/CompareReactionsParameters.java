@@ -34,7 +34,7 @@ public class CompareReactionsParameters extends SimpleParameterSet {
             "C01818","C01861","C02306","C05361","C05590","C13645","C16487","C00080","C00125","C00139","C00003","C00006","C00016",
             "C00061","C00113","C00255","C00343","C00828","C16694","C17568","C17569","C00399","C00876","C00001","C00009","C00059",
             "C01342","C01328","C00011","C01353","C00126","C00138","C00004","C00005","C00342","C01007","C01352","C01359","C01847",
-            "C02185","C05819","C90001","C90002","C00390","C01080","C00288","C00115","C00698","C11481","C01478","C00320"
+            "C02185","C05819","C90001","C90002","C00390","C01080","C00288","C00115","C00698","C11481","C01478","C00320","C00058", "C00014"
         };
         public static final MultiChoiceParameter removing = new MultiChoiceParameter("Compounds removed from the comparison of the reactions",
                 "Compounds removed from the comparison of the reactions", choices);
