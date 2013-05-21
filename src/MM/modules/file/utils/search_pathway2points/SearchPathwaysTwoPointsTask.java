@@ -267,55 +267,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
 
         }
 
-//        private List<String> getNodes() {
-//                List<String> nodes = new ArrayList<>();
-//                for (int i = 0; i < pathway.size(); i++) {
-//                        String node = pathway.get(i);
-//                        String[] ss = node.split("--->");
-//                        for (String s : ss) {
-//                                s = s.replaceAll("\\W", "");
-//                                if (!nodes.contains(s)) {
-//                                        nodes.add(s);
-//                                }
-//                        }
-//                }
-//                return nodes;
-//        }
-//        private List<String> getEdges(List<String> nodes) {
-//                List<String> edges = new ArrayList<>();
-//
-//                for (int i = 0; i < pathway.size(); i++) {
-//                        try {
-//                                String node = pathway.get(i);
-//                                String[] ss = node.split("--->");
-//                                for (int e = 0; e < ss.length; e++) {
-//                                        ss[e] = ss[e].replaceAll("\\W", "");
-//                                }
-//
-//                                String index1 = String.valueOf(nodes.indexOf(ss[0]));
-//                                String index2 = String.valueOf(nodes.indexOf(ss[1]));
-//                                String e = "n" + index1 + "-" + "n" + index2;
-//                                if (!edges.contains(e)) {
-//                                        edges.add(e);
-//                                }
-//
-//                                try {
-//                                        String index3 = String.valueOf(nodes.indexOf(ss[2]));
-//                                        String e2 = "n" + index2 + "-" + "n" + index3;
-//                                        if (!edges.contains(e2)) {
-//                                                edges.add(e2);
-//                                        }
-//                                } catch (Exception ee) {
-//                                }
-//
-//
-//                        } catch (Exception ex) {
-//                                ex.printStackTrace();
-//                        }
-//                }
-//
-//                return edges;
-//        }
+
         private void cleanPathway() {
                 List<Pathway> finalPaths = new ArrayList<>();
 
@@ -370,8 +322,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                 for (SpeciesReference pref : reaction.getListOfProducts()) {
                                         Species specie = pref.getSpeciesInstance();
 
-                                        if (specie.getId().equals(finalId)) {
-                                                System.out.println("Bieeeen");
+                                        if (specie.getId().equals(finalId)) {                                              
                                                 setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), null, null, path);
                                                 pathway.add(path);
                                                 break;
@@ -386,7 +337,6 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                                                         Pathway newPath = path.getCopy();
                                                                         setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), r.getName(), r.getId(), newPath);
                                                                         printPathway(specie.getId(), newPath, r, isInReactants, m);
-                                                                       // System.out.println("R - reactants: " + newPath.toString());
                                                                 }
                                                         }
 
@@ -399,7 +349,6 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                         Species specie = pref.getSpeciesInstance();
 
                                         if (specie.getId().equals(finalId)) {
-                                                System.out.println("Bieeeen");
                                                 setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), null, null, path);
                                                 pathway.add(path);
                                                 break;
@@ -412,8 +361,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                                                 if (isInProducts || isInReactants) {
                                                                         Pathway newPath = path.getCopy();
                                                                         setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), r.getName(), r.getId(), newPath);
-                                                                        printPathway(specie.getId(), newPath, r, isInReactants, m);
-                                                                       // System.out.println("P - reactants: " + newPath.toString());
+                                                                        printPathway(specie.getId(), newPath, r, isInReactants, m);                                                                       
                                                                 }
                                                         }
 
