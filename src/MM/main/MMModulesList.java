@@ -18,10 +18,13 @@
  */
 package MM.main;
 
+import MM.modules.database.metacyc.MetacycModule;
 import MM.modules.file.openfile.OpenBasicFileModule;
 import MM.modules.file.utils.compare_reactions.CompareReactionsModule;
 import MM.modules.file.utils.get_ebi_ids.GetEBIIDSModule;
 import MM.modules.file.utils.get_pubchem_ids.GetPubchemIDSModule;
+import MM.modules.file.utils.get_pubchem_info.GetPubchemInfoModule;
+import MM.modules.file.utils.printAllSpecies.PrintAllSpeciesModule;
 import MM.modules.file.utils.printreactions.PrintReactionsModule;
 import MM.modules.file.utils.printspecies.PrintSpeciesModule;
 import MM.modules.file.utils.search_pathway.SearchPathwaysModule;
@@ -42,7 +45,10 @@ public class MMModulesList {
               SearchPathwaysModule.class,
               SearchPathwaysTwoPointsModule.class,
               PrintReactionsModule.class,
-              PrintSpeciesModule.class
+              PrintSpeciesModule.class,
+              MetacycModule.class,
+              PrintAllSpeciesModule.class,
+              GetPubchemInfoModule.class
 
         };
 }

@@ -50,6 +50,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
         private List<Reaction> initialReaction;
         private List<String> nodes, edges;
         private int nID = 0;
+        int numThreads = 0;
 
         public SearchPathwaysTwoPointsTask(Dataset[] datasets, ParameterSet parameters) {
                 this.datasets = datasets;
@@ -124,65 +125,25 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                         boolean isInProducts = isInProducts(r, this.initialId);
                                         boolean isInReactants = isInReactants(r, this.initialId);
                                         if (isInProducts || isInReactants) {
-                                                System.out.println(r.getId() + " - " + isInProducts + " - " + isInReactants);
                                                 Pathway path = new Pathway();
                                                 String Id1 = String.valueOf("n" + nID);
                                                 nID++;
                                                 path.addNodes(Id1 + " - " + this.initialId);
-                                                this.pathway.add(path);
+
+                                                String Id2 = String.valueOf("n" + nID);
+                                                nID++;
+                                                path.addNodes(Id2 + " - " + r.getName() + "-" + r.getId());
+                                                path.addEdges(Id1 + "-" + Id2);
                                                 printPathway(this.initialId, path, m.getReaction(r.getId()), isInReactants, m);
                                         }
-
-                                        /* for (SpeciesReference reactant : r.getListOfReactants()) {
-                                         Species s = reactant.getSpeciesInstance();
-
-                                         if (s.getId() == null ? initialId == null : s.getId().equals(initialId)) {
-                                         reactionsIds.add(r.getId());
-                                         inReactantsList.add(true);
-                                         found = true;
-                                         break;
-                                         }
-                                         }
-                                         if (!found) {
-                                         for (SpeciesReference product : r.getListOfProducts()) {
-                                         Species s = product.getSpeciesInstance();
-                                         if (s.getId() == null ? initialId == null : s.getId().equals(initialId)) {
-                                         reactionsIds.add(r.getId());
-                                         inReactantsList.add(false);
-                                         }
-                                         }
-                                         }*/
+                                        this.numThreads = 0;
                                 }
 
 
                                 this.cleanPathway();
                                 this.printPathway();
 
-                                /* // For each reaction in the array "reactionsIds" search the pathway until the final metabolite
-                                 for (int i = 0; i < reactionsIds.size(); i++) {
-                                 String reactionId = reactionsIds.get(i);
-                                 Boolean inReactants = inReactantsList.get(i);
-                                 // Keeps a list of used reactions to avoid infinite loops.
 
-                                 // this.used.add(reactionId);
-                                 String s = this.tf.getText();
-                                 s = s.concat("Reaction: " + reactionId + "\n");
-                                 this.tf.setText(s);
-
-                                 this.initialReaction.add(m.getReaction(reactionId));
-
-                                 // If the pathway is found, prints it
-                                 Pathway path = new Pathway();
-                                 String Id1 = String.valueOf("n" + nID);
-                                 nID++;
-                                 path.addNodes(Id1 + " - " + this.initialId);
-                                 this.pathway.add(path);
-                                 printPathway(this.initialId, path, m.getReaction(reactionId), inReactants, m);
-
-
-
-
-                                 }*/
                         }
 
 
@@ -195,8 +156,19 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
 
         private void printPathway(String initialID, Pathway path, Reaction reaction, Boolean inReactants, Model m) {
                 // For each product of the reaction
-                searchThread t = new searchThread(initialID, path, reaction, inReactants, m);
-                t.start();               
+                if (this.numThreads++ < 1000) {
+                        try {
+                                searchThread t = new searchThread(initialID, path, reaction, inReactants, m);
+                                t.start();
+                                try {
+                                        t.join();
+                                } catch (InterruptedException ex) {
+                                        // java.util.logging.Logger.getLogger(SearchPathwaysTwoPointsTask.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                                }
+                        } catch (OutOfMemoryError e) {
+                        }
+
+                }
         }
 
         private void setPath(String rName, String rID, String pName, String pID, String rName2, String rID2, Pathway path) {
@@ -396,140 +368,8 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                         this.used.add(initialID);
                 }
 
-                public void run2() {
-                        if (inReactants && !exit) {
-                                for (SpeciesReference pref : reaction.getListOfProducts()) {
-
-                                        Species p = pref.getSpeciesInstance();
-                                        if (p.getId().equals(initialID)) {
-                                                continue;
-                                        }
-
-                                        //if the product id is the same as the final id, the algorithm is over.
-                                        if (p.getId().equals(finalId)) {
-                                                setPath(reaction.getName(), reaction.getId(), p.getName(), p.getId(), null, null, path);
-                                                exit = true;
-                                                System.out.println("Bieeeen");
-                                                break;
-                                        }
-                                        if (isNotCofactor(p)) {
-                                                for (Reaction r : m.getListOfReactions()) {
-                                                        if (r != reaction && !exit) {
-                                                                ListOf<SpeciesReference> reactants = r.getListOfReactants();
-                                                                if (!used.contains(r.getId())) {
-                                                                        for (SpeciesReference reactantRef : reactants) {
-                                                                                Species reactant = reactantRef.getSpeciesInstance();
-
-                                                                                if (!used.contains(reactant.getId())) {
-
-                                                                                        if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
-                                                                                                Pathway newPath = path.getCopy();
-                                                                                                setPath(reaction.getName(), reaction.getId(), p.getName(), p.getId(), r.getName(), r.getId(), newPath);
-
-                                                                                                printPathway(reactant.getId(), newPath, r, true, m);
-                                                                                                used.add(reactant.getId());
-                                                                                                pathway.add(newPath);
-                                                                                                this.used.add(r.getId());
-                                                                                                System.out.println("P - reactants: " + newPath.toString());
-                                                                                        }
-                                                                                }
-
-                                                                        }
-
-                                                                        ListOf<SpeciesReference> products = r.getListOfProducts();
-                                                                        for (SpeciesReference reactantRef : products) {
-                                                                                Species reactant = reactantRef.getSpeciesInstance();
-                                                                                if (!used.contains(reactant.getId())) {
-                                                                                        if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
-                                                                                                Pathway newPath = path.getCopy();
-                                                                                                setPath(reaction.getName(), reaction.getId(), p.getName(), p.getId(), r.getName(), r.getId(), newPath);
-
-                                                                                                printPathway(reactant.getId(), newPath, r, false, m);
-                                                                                                used.add(reactant.getId());
-                                                                                                pathway.add(newPath);
-                                                                                                this.used.add(r.getId());
-                                                                                                System.out.println("P - products: " + newPath.toString());
-                                                                                        }
-
-                                                                                }
-                                                                        }
-                                                                }
-                                                        }
-
-                                                }
-                                        }
-                                        pathway.remove(path);
-
-                                }
-                        } else if (!exit) {
-
-                                for (SpeciesReference pref : reaction.getListOfReactants()) {
-
-                                        Species p = pref.getSpeciesInstance();
-
-                                        if (p.getId().equals(initialID)) {
-                                                continue;
-                                        }
-                                        //if the product id is the same as the final id, the algorithm is over.
-                                        if (p.getId().equals(finalId)) {
-                                                System.out.println("Bieeeen");
-                                                setPath(reaction.getName(), reaction.getId(), p.getName(), p.getId(), null, null, path);
-                                                exit = true;
-                                                break;
-                                        }
-                                        if (isNotCofactor(p)) {
-                                                for (Reaction r : m.getListOfReactions()) {
-                                                        if (r != reaction && !exit) {
-                                                                ListOf<SpeciesReference> products = r.getListOfProducts();
-                                                                if (!used.contains(r.getId())) {
-                                                                        for (SpeciesReference reactantRef : products) {
-                                                                                Species reactant = reactantRef.getSpeciesInstance();
-                                                                                if (!used.contains(reactant.getId())) {
-                                                                                        if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
-                                                                                                Pathway newPath = path.getCopy();
-                                                                                                setPath(reaction.getName(), reaction.getId(), p.getName(), p.getId(), r.getName(), r.getId(), newPath);
-
-                                                                                                this.used.add(reactant.getId());
-
-                                                                                                printPathway(reactant.getId(), newPath, r, false, m);
-
-                                                                                                pathway.add(newPath);
-
-                                                                                                System.out.println("R - products: " + newPath.toString());
-                                                                                                this.used.add(r.getId());
-                                                                                        }
-                                                                                }
-                                                                        }
-
-                                                                        ListOf<SpeciesReference> reactants = r.getListOfReactants();
-                                                                        for (SpeciesReference reactantRef : reactants) {
-                                                                                Species reactant = reactantRef.getSpeciesInstance();
-                                                                                if (!used.contains(reactant.getId())) {
-                                                                                        if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
-                                                                                                Pathway newPath = path.getCopy();
-                                                                                                setPath(reaction.getName(), reaction.getId(), p.getName(), p.getId(), r.getName(), r.getId(), newPath);
-
-                                                                                                this.used.add(reactant.getId());
-
-                                                                                                printPathway(reactant.getId(), newPath, r, true, m);
-                                                                                                this.used.add(r.getId());
-                                                                                                pathway.add(newPath);
-                                                                                                System.out.println("R - reactants: " + newPath.toString());
-                                                                                        }
-                                                                                }
-                                                                        }
-                                                                }
-                                                        }
-
-                                                }
-                                        }
-                                        pathway.remove(path);
-
-                                }
-                        }
-                }
-
                 public void run() {
+
                         if (this.inReactants) {
                                 //for each product of the reaction check what are the other reactions that contain it..
                                 for (SpeciesReference pref : reaction.getListOfProducts()) {
@@ -538,7 +378,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                         if (specie.getId().equals(finalId)) {
                                                 System.out.println("Bieeeen");
                                                 setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), null, null, path);
-                                                exit = true;
+                                                pathway.add(path);
                                                 break;
                                         }
                                         // check the reactions where the product is
@@ -551,7 +391,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                                                         Pathway newPath = path.getCopy();
                                                                         setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), r.getName(), r.getId(), newPath);
                                                                         printPathway(specie.getId(), newPath, r, isInReactants, m);
-                                                                        System.out.println("R - reactants: " + newPath.toString());
+                                                                       // System.out.println("R - reactants: " + newPath.toString());
                                                                 }
                                                         }
 
@@ -566,7 +406,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                         if (specie.getId().equals(finalId)) {
                                                 System.out.println("Bieeeen");
                                                 setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), null, null, path);
-                                                exit = true;
+                                                pathway.add(path);
                                                 break;
                                         }
                                         if (isNotCofactor(specie)) {
@@ -578,7 +418,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                                                         Pathway newPath = path.getCopy();
                                                                         setPath(reaction.getName(), reaction.getId(), specie.getName(), specie.getId(), r.getName(), r.getId(), newPath);
                                                                         printPathway(specie.getId(), newPath, r, isInReactants, m);
-                                                                        System.out.println("P - reactants: " + newPath.toString());
+                                                                       // System.out.println("P - reactants: " + newPath.toString());
                                                                 }
                                                         }
 
@@ -586,7 +426,6 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                         }
                                 }
                         }
-
                 }
         }
 

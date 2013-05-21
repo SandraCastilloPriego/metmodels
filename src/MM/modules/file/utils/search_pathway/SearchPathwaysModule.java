@@ -29,9 +29,8 @@ import MM.taskcontrol.Task;
  */
 public class SearchPathwaysModule implements MMProcessingModule {
 
-        public static final String MODULE_NAME = "Search Pathways";
-        
-        private  SearchPathwaysParameters parameters;
+        public static final String MODULE_NAME = "Search Pathways";        
+     
         @Override
         public ParameterSet getParameterSet() {
                 return new SearchPathwaysParameters();

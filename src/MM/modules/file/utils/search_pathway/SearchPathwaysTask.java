@@ -535,7 +535,7 @@ public class SearchPathwaysTask extends AbstractTask {
 
 
                 for (SpeciesReference pref : products) {
-                        Species p = pref.getSpeciesInstance();                   
+                        Species p = pref.getSpeciesInstance();
                         for (Reaction r : rs) {
                                 if (r != r2) {
                                         ListOf<SpeciesReference> reactants = r.getListOfReactants();
@@ -543,13 +543,38 @@ public class SearchPathwaysTask extends AbstractTask {
                                                 Species reactant = reactantRef.getSpeciesInstance();
                                                 if (!this.hasToBeRemoved(reactant.getId())) {
                                                         if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
-                                                                String s = this.tf.getText();
-
-                                                                s = s.concat(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId() + "\n");
-                                                                this.tf.setText(s);
-
-                                                                System.out.println(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId());
-
+                                                                printReaction(r2);
+                                                                /*
+                                                                 * String s =
+                                                                 * this.tf.getText();
+                                                                 *
+                                                                 * s =
+                                                                 * s.concat(r2.getName()
+                                                                 * + " - " +
+                                                                 * r2.getId() +
+                                                                 * "--->" +
+                                                                 * p.getName() +
+                                                                 * " - " +
+                                                                 * p.getId() +
+                                                                 * "---> " +
+                                                                 * r.getName() +
+                                                                 * " - " +
+                                                                 * r.getId() +
+                                                                 * "\n");
+                                                                 * this.tf.setText(s);
+                                                                 *
+                                                                 * System.out.println(r2.getName()
+                                                                 * + " - " +
+                                                                 * r2.getId() +
+                                                                 * "--->" +
+                                                                 * p.getName() +
+                                                                 * " - " +
+                                                                 * p.getId() +
+                                                                 * "---> " +
+                                                                 * r.getName() +
+                                                                 * " - " +
+                                                                 * r.getId());
+                                                                 */
                                                                 this.used.add(r2.getId());
                                                                 if (!this.used.contains(r.getId())) {
                                                                         printPathway(r, m);
@@ -563,13 +588,13 @@ public class SearchPathwaysTask extends AbstractTask {
                         }
 
                 }
-                
-                
-                
-                
+
+
+
+
                 for (SpeciesReference pref : r2.getListOfReactants()) {
                         Species p = pref.getSpeciesInstance();
-                        
+
                         for (Reaction r : rs) {
                                 if (r != r2) {
                                         ListOf<SpeciesReference> reactants = r.getListOfProducts();
@@ -577,13 +602,38 @@ public class SearchPathwaysTask extends AbstractTask {
                                                 Species reactant = reactantRef.getSpeciesInstance();
                                                 if (!this.hasToBeRemoved(reactant.getId())) {
                                                         if (reactant.getId() == null ? p.getId() == null : reactant.getId().equals(p.getId())) {
-                                                                String s = this.tf.getText();
-
-                                                                s = s.concat(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId() + "\n");
-                                                                this.tf.setText(s);
-
-                                                                System.out.println(r2.getName() + " - " + r2.getId() + "--->" + p.getName() + " - " + p.getId() + "---> " + r.getName() + " - " + r.getId());
-
+                                                                /*
+                                                                 * String s =
+                                                                 * this.tf.getText();
+                                                                 *
+                                                                 * s =
+                                                                 * s.concat(r2.getName()
+                                                                 * + " - " +
+                                                                 * r2.getId() +
+                                                                 * "--->" +
+                                                                 * p.getName() +
+                                                                 * " - " +
+                                                                 * p.getId() +
+                                                                 * "---> " +
+                                                                 * r.getName() +
+                                                                 * " - " +
+                                                                 * r.getId() +
+                                                                 * "\n");
+                                                                 * this.tf.setText(s);
+                                                                 *
+                                                                 * System.out.println(r2.getName()
+                                                                 * + " - " +
+                                                                 * r2.getId() +
+                                                                 * "--->" +
+                                                                 * p.getName() +
+                                                                 * " - " +
+                                                                 * p.getId() +
+                                                                 * "---> " +
+                                                                 * r.getName() +
+                                                                 * " - " +
+                                                                 * r.getId());
+                                                                 */
+                                                                this.printReaction(r2);
                                                                 this.used.add(r2.getId());
                                                                 if (!this.used.contains(r.getId())) {
                                                                         printPathway(r, m);
@@ -608,5 +658,26 @@ public class SearchPathwaysTask extends AbstractTask {
                 }
 
                 return hasToBeRemoved;
+        }
+
+        private void printReaction(Reaction r) {
+                String s = this.tf.getText();
+
+                s.concat(r.getId() + " - " + r.getName() + "\n");
+                s.concat("Reactants:\n");
+
+                for (SpeciesReference specieRef : r.getListOfReactants()) {
+                        Species specie = specieRef.getSpeciesInstance();
+                        s.concat(specie.getId() + " - " + specie.getName() + " - " + String.valueOf(specieRef.getCalculatedStoichiometry())+ "\n");
+                }
+
+                s.concat("Products:\n");
+                for (SpeciesReference specieRef : r.getListOfProducts()) {                       
+                        Species specie = specieRef.getSpeciesInstance();
+                        s.concat(specie.getId() + " - " + specie.getName() + " - " + String.valueOf(specieRef.getCalculatedStoichiometry())+ "\n");
+           
+                }
+
+                s.concat("-------------------------------------");
         }
 }

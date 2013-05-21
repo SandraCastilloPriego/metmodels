@@ -85,30 +85,24 @@ public class PrintReactionsTask extends AbstractTask {
                                         s[0] = r.getId();
                                         s[1] = r.getName();
                                         w.writeRecord(s);
-                                        
+
+                                        KineticLaw law = r.getKineticLaw();
+                                        ListOf<LocalParameter> parameters = law.getListOfLocalParameters();
+                                        for (LocalParameter term : parameters) {
+                                                String value = term.getName() + ": " + String.valueOf(term.getValue());
+                                                w.write(value);
+                                        }
+                                        w.endRecord();
                                         w.write("Annotations:");
                                         Annotation a = r.getAnnotation();
-                                        for(CVTerm term : a.getListOfCVTerms()){
+                                        for (CVTerm term : a.getListOfCVTerms()) {
                                                 w.write(term.toString());
                                         }
-                                        w.write(a.getNonRDFannotation());                                        
+                                        w.write(a.getNonRDFannotation());
                                         w.endRecord();
                                         w.write("Reactants:");
                                         w.endRecord();
-                                        for(SpeciesReference specieRef : r.getListOfReactants()){
-                                                s = new String[5];
-                                                Species specie = specieRef.getSpeciesInstance();
-                                                s[0] = specie.getId();
-                                                s[1] = specie.getMetaId();
-                                                s[2] = specie.getCompartment();
-                                                s[3] = specie.getName();
-                                                s[4] = String.valueOf(specieRef.getCalculatedStoichiometry());
-                                                w.writeRecord(s);
-                                        }
-                                        
-                                        w.write("Products:");
-                                        w.endRecord();
-                                        for(SpeciesReference specieRef : r.getListOfProducts()){
+                                        for (SpeciesReference specieRef : r.getListOfReactants()) {
                                                 s = new String[5];
                                                 Species specie = specieRef.getSpeciesInstance();
                                                 s[0] = specie.getId();
@@ -119,7 +113,22 @@ public class PrintReactionsTask extends AbstractTask {
                                                 w.writeRecord(s);
                                         }
 
-                                        w.write("------------------------------------------------------");                                        
+                                        w.write("Products:");
+                                        w.endRecord();
+                                        for (SpeciesReference specieRef : r.getListOfProducts()) {
+                                                s = new String[5];
+                                                Species specie = specieRef.getSpeciesInstance();
+                                                s[0] = specie.getId();
+                                                s[1] = specie.getMetaId();
+                                                s[2] = specie.getCompartment();
+                                                s[3] = specie.getName();
+                                                s[4] = String.valueOf(specieRef.getCalculatedStoichiometry());
+                                                w.writeRecord(s);
+                                        }
+
+
+
+                                        w.write("------------------------------------------------------");
                                         w.endRecord();
                                 }
                                 w.close();
