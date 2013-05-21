@@ -47,7 +47,6 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
         private JScrollPane panel;
         private JTextArea tf;
         private List<Pathway> pathway;
-        private List<Reaction> initialReaction;
         private List<String> nodes, edges;
         private int nID = 0;
         int numThreads = 0;
@@ -60,7 +59,6 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 this.toBeRemoved = (String[]) parameters.getParameter(SearchPathwaysTwoPointsParameters.removing).getValue();
 
                 this.pathway = new ArrayList<>();
-                this.initialReaction = new ArrayList<>();
 
                 this.frame = new JInternalFrame("Result", true, true, true, true);
 
@@ -118,9 +116,6 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                 Model m = doc.getModel();
 
                                 // Searchs for the reactions that contains the initial metabolite between the reactans or products and adds them in the array "reactionsIds"
-
-                                // List<String> reactionsIds = new ArrayList<>();
-                                // List<Boolean> inReactantsList = new ArrayList<>();
                                 for (Reaction r : m.getListOfReactions()) {
                                         boolean isInProducts = isInProducts(r, this.initialId);
                                         boolean isInReactants = isInReactants(r, this.initialId);
@@ -163,7 +158,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                 try {
                                         t.join();
                                 } catch (InterruptedException ex) {
-                                        // java.util.logging.Logger.getLogger(SearchPathwaysTwoPointsTask.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                                         java.util.logging.Logger.getLogger(SearchPathwaysTwoPointsTask.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
                                 }
                         } catch (OutOfMemoryError e) {
                         }
@@ -432,12 +427,10 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
         public boolean isInProducts(Reaction reaction, String s) {
                 ListOf<SpeciesReference> products = reaction.getListOfProducts();
                 for (SpeciesReference reactantRef : products) {
-                        Species product = reactantRef.getSpeciesInstance();
-                        // if (!used.contains(product.getId())) {
+                        Species product = reactantRef.getSpeciesInstance();                      
                         if (product.getId() != null && product.getId().equals(s)) {
                                 return true;
                         }
-                        // }
                 }
                 return false;
         }
@@ -445,12 +438,10 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
         public boolean isInReactants(Reaction reaction, String s) {
                 ListOf<SpeciesReference> reactants = reaction.getListOfReactants();
                 for (SpeciesReference reactantRef : reactants) {
-                        Species reactant = reactantRef.getSpeciesInstance();
-                        // if (!used.contains(reactant.getId())) {
+                        Species reactant = reactantRef.getSpeciesInstance();                      
                         if (reactant.getId() != null && reactant.getId().equals(s)) {
                                 return true;
                         }
-                        // }
                 }
                 return false;
         }
