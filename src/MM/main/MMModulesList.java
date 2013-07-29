@@ -22,16 +22,16 @@ import MM.modules.celldesigner.CellDesignerModule;
 import MM.modules.celldesignernames.CellDesignerNamesModule;
 import MM.modules.database.metacyc.MetacycModule;
 import MM.modules.file.openfile.OpenBasicFileModule;
-import MM.modules.file.utils.compare_reactions.CompareReactionsModule;
-import MM.modules.file.utils.get_ebi_ids.GetEBIIDSModule;
-import MM.modules.file.utils.get_pubchem_ids.GetPubchemIDSModule;
-import MM.modules.file.utils.get_pubchem_info.GetPubchemInfoModule;
-import MM.modules.file.utils.printAllSpecies.PrintAllSpeciesModule;
-import MM.modules.file.utils.printreactions.PrintReactionsModule;
-import MM.modules.file.utils.printspecies.PrintSpeciesModule;
-import MM.modules.file.utils.search_pathway.SearchPathwaysModule;
-import MM.modules.file.utils.search_pathway2points.SearchPathwaysTwoPointsModule;
-import MM.modules.file.utils.search_reaction.SearchReactionsModule;
+import MM.modules.dataanalysis.compare_reactions.CompareReactionsModule;
+import MM.modules.utils.get_ebi_ids.GetEBIIDSModule;
+import MM.modules.utils.get_pubchem_ids.GetPubchemIDSModule;
+import MM.modules.utils.get_pubchem_info.GetPubchemInfoModule;
+import MM.modules.utils.printAllSpecies.PrintAllSpeciesModule;
+import MM.modules.utils.printreactions.PrintReactionsModule;
+import MM.modules.utils.printspecies.PrintSpeciesModule;
+import MM.modules.dataanalysis.search_pathway.SearchPathwaysModule;
+import MM.modules.dataanalysis.search_pathway2points.SearchPathwaysTwoPointsModule;
+import MM.modules.dataanalysis.search_reaction.SearchReactionsModule;
 
 /**
  * List of modules included in MM

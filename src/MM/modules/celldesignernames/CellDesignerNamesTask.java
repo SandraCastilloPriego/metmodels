@@ -19,7 +19,7 @@ package MM.modules.celldesignernames;
 
 import MM.data.Dataset;
 import MM.main.MMCore;
-import MM.modules.file.utils.compare_reactions.CompareReactionsParameters;
+import MM.modules.dataanalysis.compare_reactions.CompareReactionsParameters;
 import MM.parameters.ParameterSet;
 import MM.taskcontrol.AbstractTask;
 import MM.taskcontrol.TaskStatus;
