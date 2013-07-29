@@ -18,6 +18,8 @@
  */
 package MM.main;
 
+import MM.modules.celldesigner.CellDesignerModule;
+import MM.modules.celldesignernames.CellDesignerNamesModule;
 import MM.modules.database.metacyc.MetacycModule;
 import MM.modules.file.openfile.OpenBasicFileModule;
 import MM.modules.file.utils.compare_reactions.CompareReactionsModule;
@@ -48,7 +50,9 @@ public class MMModulesList {
               PrintSpeciesModule.class,
               MetacycModule.class,
               PrintAllSpeciesModule.class,
-              GetPubchemInfoModule.class
+              GetPubchemInfoModule.class,
+              CellDesignerModule.class,
+              CellDesignerNamesModule.class
 
         };
 }
