@@ -15,14 +15,19 @@
  * MetModels; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
-package MM.modules.dataanalysis.search_pathway2points;
+package MM.modules.dataanalysis.search_pathway2pointsFluxes;
 
 import MM.data.Dataset;
 import MM.main.MMCore;
 import MM.parameters.ParameterSet;
 import MM.taskcontrol.AbstractTask;
 import MM.taskcontrol.TaskStatus;
+import com.csvreader.CsvReader;
 import java.awt.Dimension;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -31,19 +36,21 @@ import java.util.Map;
 import javax.swing.JInternalFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.sbml.jsbml.*;
+import org.sbml.jsbml.Model;
+import org.sbml.jsbml.Reaction;
+import org.sbml.jsbml.SBMLDocument;
+import org.sbml.jsbml.Species;
+import org.sbml.jsbml.SpeciesReference;
 
 /**
  *
  * @author scsandra
  */
-public class SearchPathwaysTwoPointsTask extends AbstractTask {
+public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
 
         private Dataset[] datasets;
         private float progress = 0.0f;
-        private String message = "Search for Pathways between two points... ";
+        private String message = "Search for Pathways between two points using fluxes... ";
         private String dataset, initialId, finalId;
         private String[] toBeRemoved;
         private JInternalFrame frame;
@@ -52,20 +59,19 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
         private List<Node> nodes, fnodes, enodes;
         private List<Edge> edges, fedges, eedges;
         private Map<String, Integer> location;
-        private Model m;
+        private File fluxes;
         private int expansion;
+        private Model m;
 
-        public SearchPathwaysTwoPointsTask(Dataset[] datasets, ParameterSet parameters) {
+        public SearchPathwaysTwoPointsFluxesTask(Dataset[] datasets, ParameterSet parameters) {
                 this.datasets = datasets;
-                this.dataset = (String) parameters.getParameter(SearchPathwaysTwoPointsParameters.data).getValue();
-                this.initialId = (String) parameters.getParameter(SearchPathwaysTwoPointsParameters.idFrom).getValue();
-                this.finalId = (String) parameters.getParameter(SearchPathwaysTwoPointsParameters.idTo).getValue();
-                this.toBeRemoved = (String[]) parameters.getParameter(SearchPathwaysTwoPointsParameters.removing).getValue();
-                this.expansion = parameters.getParameter(SearchPathwaysTwoPointsParameters.expansion).getValue();
-
-
+                this.dataset = (String) parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.data).getValue();
+                this.initialId = (String) parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.idFrom).getValue();
+                this.finalId = (String) parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.idTo).getValue();
+                this.toBeRemoved = (String[]) parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.removing).getValue();
+                this.fluxes = (File) parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.fileName).getValue();
                 this.frame = new JInternalFrame("Result", true, true, true, true);
-
+                this.expansion = parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.expansion).getValue();
                 this.tf = new JTextArea();
                 this.panel = new JScrollPane(tf);
         }
@@ -106,17 +112,15 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 setStatus(TaskStatus.PROCESSING);
                 try {
                         if (getStatus() == TaskStatus.PROCESSING) {
-
+                                HashMap<String, Double> readFluxes = readFluxes();
                                 // opens a frame to show the results
 
                                 frame.setSize(new Dimension(700, 500));
                                 frame.add(this.panel);
-
-
                                 MMCore.getDesktop().addInternalFrame(frame);
 
                                 // creates the network representation
-                                this.createNetwork();
+                                this.createNetwork(readFluxes);
                                 boolean working = true;
                                 while (working) {
                                         try {
@@ -142,13 +146,12 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                                 working = false;
                                         }
                                 }
-                                expansion();
+                                expansion(readFluxes);
                                 printPathway();
                         }
 
 
                 } catch (Exception ex) {
-                        Logger.getLogger(SearchPathwaysTwoPointsTask.class.getName()).log(Level.ERROR, null, ex);
                 }
 
                 setStatus(TaskStatus.FINISHED);
@@ -208,6 +211,9 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                         text = text.concat(n + "\n");
                 }
 
+
+
+
                 for (Edge e : fedges) {
                         String source = null, destination = null, arrowSource = "none", arrowTarget = "none";
                         if (e.getId().contains("rev")) {
@@ -221,7 +227,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                         }
                         String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
                                 + "\t\t\t<y:PolyLineEdge>\n"
-                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getId()
+                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getLabel()
                                 + "\t\t\t\t</y:EdgeLabel>"
                                 + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
                                 + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
@@ -246,7 +252,7 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                         }
                         String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
                                 + "\t\t\t<y:PolyLineEdge>\n"
-                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getId()
+                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getLabel()
                                 + "\t\t\t\t</y:EdgeLabel>"
                                 + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
                                 + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
@@ -275,7 +281,26 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
 
         }
 
-        private void createNetwork() {
+        private HashMap<String, Double> readFluxes() {
+                HashMap<String, Double> readFluxes = new HashMap<>();
+                try {
+
+                        CsvReader reader = new CsvReader(new FileReader(this.fluxes.getAbsolutePath()));
+                        reader.readHeaders();
+                        String[] header = reader.getHeaders();
+                        while (reader.readRecord()) {
+                                String[] data = reader.getValues();
+                                readFluxes.put(data[2], Double.parseDouble(data[1]));
+                        }
+                } catch (FileNotFoundException ex) {
+                        java.util.logging.Logger.getLogger(SearchPathwaysTwoPointsFluxesTask.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(SearchPathwaysTwoPointsFluxesTask.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                }
+                return readFluxes;
+        }
+
+        private void createNetwork(HashMap<String, Double> readFluxes) {
                 SBMLDocument doc = null;
                 for (Dataset d : datasets) {
                         if (this.dataset.contains(d.getDatasetName())) {
@@ -295,12 +320,14 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 }
 
                 for (Reaction r : m.getListOfReactions()) {
-                        for (SpeciesReference re : r.getListOfReactants()) {
-                                if (isNotCofactor(re.getSpeciesInstance())) {
-                                        for (SpeciesReference p : r.getListOfProducts()) {
-                                                if (isNotCofactor(p.getSpeciesInstance())) {
-                                                        addLane(r.getId(), location.get(re.getSpeciesInstance().getId()), location.get(p.getSpeciesInstance().getId()), 10);
-                                                        addLane(r.getId() + "rev", location.get(p.getSpeciesInstance().getId()), location.get(re.getSpeciesInstance().getId()), 10);
+                        if (Math.abs(readFluxes.get(r.getId())) > 0.0000000001) {
+                                for (SpeciesReference re : r.getListOfReactants()) {
+                                        if (isNotCofactor(re.getSpeciesInstance())) {
+                                                for (SpeciesReference p : r.getListOfProducts()) {
+                                                        if (isNotCofactor(p.getSpeciesInstance())) {
+                                                                addLane(r.getId(), location.get(re.getSpeciesInstance().getId()), location.get(p.getSpeciesInstance().getId()), 10, readFluxes.get(r.getId()));
+                                                                addLane(r.getId() + "rev", location.get(p.getSpeciesInstance().getId()), location.get(re.getSpeciesInstance().getId()), 10, readFluxes.get(r.getId()));
+                                                        }
                                                 }
                                         }
                                 }
@@ -309,57 +336,214 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
         }
 
         private void addLane(String laneId, int sourceLocNo, int destLocNo,
-                int duration) {
-                Edge lane = new Edge(laneId, nodes.get(sourceLocNo), nodes.get(destLocNo), duration);
+                int duration, double fluxes) {
+                String label = laneId + " / " + String.valueOf(fluxes);
+                Edge lane = new Edge(laneId, label, nodes.get(sourceLocNo), nodes.get(destLocNo), duration);
                 edges.add(lane);
         }
 
-        private void expansion() {
+        /* private void createNetwork(HashMap<String, Double> readFluxes) {
+         SBMLDocument doc = null;
+         for (Dataset d : datasets) {
+         if (this.dataset.contains(d.getDatasetName())) {
+         doc = d.getDocument();
+         }
+         }
+
+         Model m = doc.getModel();
+
+         GraphDatabaseService graphDb = new GraphDatabaseFactory().newEmbeddedDatabase("/home/scsandra/Documents/Cellfactory/TriReconstruction/QC/temp");
+
+         registerShutdownHook(graphDb);
+
+         Map<String, Node> nodes = new HashMap<>();
+         Transaction tx = graphDb.beginTx();
+         try {
+
+
+         for (Reaction r : m.getListOfReactions()) {
+         boolean add = false;
+         if (readFluxes.containsKey(r.getId())) {
+         if (Math.abs(readFluxes.get(r.getId())) > 0) {
+         add = true;
+         }
+         }
+
+         if (add) {
+         Node n = graphDb.createNode();
+         n.setProperty("Id", r.getId());
+         n.setProperty("Name", r.getName());
+         n.setProperty("isReaction", true);
+         n.setProperty("flux", Math.abs(readFluxes.get(r.getId())));
+         if (readFluxes.get(r.getId()) < 0) {
+         n.setProperty("fluxDirection", "Negative");
+         } else {
+         n.setProperty("fluxDirection", "Positive");
+         }
+         nodes.put(r.getId(), n);
+         //                                        ListOf<SpeciesReference> s = r.getListOfReactants();
+         //                                        for (SpeciesReference species : s) {
+         //                                                Species sp = species.getSpeciesInstance();
+         //                                                if (isNotCofactor(sp)) {
+         //                                                        Node spReactant = graphDb.createNode();
+         //                                                        spReactant.setProperty("Id", sp.getId());
+         //                                                        spReactant.setProperty("Name", sp.getName());
+         //                                                        spReactant.setProperty("isReaction", false);
+         //                                                        spReactant.setProperty("Compartment", sp.getCompartment());
+         //                                                        spReactant.setProperty("Rol", "Reactant");
+         //                                                        nodes.put(sp.getId(), spReactant);
+         //                                                        spReactant.createRelationshipTo(n, RelTypes.SPECIES);
+         //                                                }
+         //                                        }
+         //
+         //                                        s = r.getListOfProducts();
+         //                                        for (SpeciesReference species : s) {
+         //                                                Species sp = species.getSpeciesInstance();
+         //                                                if (isNotCofactor(sp)) {
+         //                                                        org.neo4j.graphdb.Node spProducts = graphDb.createNode();
+         //                                                        spProducts.setProperty("Id", sp.getId());
+         //                                                        spProducts.setProperty("Name", sp.getName());
+         //                                                        spProducts.setProperty("isReaction", false);
+         //                                                        spProducts.setProperty("Rol", "Product");
+         //                                                        nodes.put(sp.getId(), spProducts);
+         //                                                        spProducts.createRelationshipTo(n, RelTypes.SPECIES);
+         //                                                }
+         //                                        }
+         }
+         }
+
+                       
+         for (Map.Entry<String, Node> node1 : nodes.entrySet()) {
+         for (Map.Entry<String, Node> node2 : nodes.entrySet()) {
+         if (node1 != node2 && shareMetabolite(node1.getKey(), node2.getKey(), m)) {
+         node1.getValue().createRelationshipTo(node2.getValue(), RelTypes.CONNECTED);
+         }
+
+         }
+         }
+         // Database operations go here
+         tx.success();
+         } finally {
+         tx.finish();
+
+         }
+
+         graphDb.shutdown();
+
+         }
+
+         private List<String> getMetabolites(Reaction r) {
+         List<String> met = new ArrayList<>();
+         ListOf<SpeciesReference> s = r.getListOfReactants();
+         ListOf<SpeciesReference> p = r.getListOfProducts();
+         for (SpeciesReference sr : s) {
+         if (isNotCofactor(sr.getSpeciesInstance())) {
+         met.add(sr.getSpeciesInstance().getId());
+         }
+         }
+         for (SpeciesReference sr : p) {
+         if (isNotCofactor(sr.getSpeciesInstance())) {
+         met.add(sr.getSpeciesInstance().getId());
+         }
+         }
+
+         return met;
+         }
+
+         private boolean shareMetabolite(String node1, String node2, Model m) {
+         Reaction r = m.getReaction(node1);
+         Reaction r2 = m.getReaction(node2);
+         if (r != null && r2 != null) {
+         List<String> met1 = getMetabolites(r);
+         List<String> met2 = getMetabolites(r2);
+         if (intersection(met1, met2)) {
+         return true;
+         } else {
+         return false;
+         }
+
+         } else {
+         return false;
+         }
+
+         }
+
+         private boolean intersection(List<String> met1, List<String> met2) {
+         for (String s : met1) {
+         for (String s2 : met2) {
+         if (s.equals(s2)) {
+         return true;
+         }
+         }
+         }
+         return false;
+
+         }
+
+         private static enum RelTypes implements RelationshipType {
+
+         CONNECTED, PRODUCT, REACTANT, SPECIES
+         }
+
+         private static void registerShutdownHook(final GraphDatabaseService graphDb) {
+         // Registers a shutdown hook for the Neo4j instance so that it
+         // shuts down nicely when the VM exits (even if you "Ctrl-C" the
+         // running application).
+         Runtime.getRuntime().addShutdownHook(new Thread() {
+         @Override
+         public void run() {
+         graphDb.shutdown();
+         }
+         });
+         }*/
+        private void expansion(HashMap<String, Double> readFluxes) {
                 for (Node n : this.fnodes) {
-                        getReactionConnected(n);
+                        getReactionConnected(n, readFluxes);
                 }
         }
 
-        private void getReactionConnected(Node n) {                
+        private void getReactionConnected(Node n, HashMap<String, Double> readFluxes) {
                 for (Reaction r : m.getListOfReactions()) {
                         if (isNotInEdges(r.getId())) {
-                               for (SpeciesReference re : r.getListOfReactants()) {
-                                        if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
-                                               for (SpeciesReference p : r.getListOfProducts()) {
-                                                        if (isNotCofactor(p.getSpeciesInstance())) {
-                                                                Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
-                                                                this.enodes.add(pNode);
-                                                                addLane(r.getId(), pNode, n);
+                                if (Math.abs(readFluxes.get(r.getId())) > 0.0000000001) {
+                                        for (SpeciesReference re : r.getListOfReactants()) {
+                                                if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
+                                                        for (SpeciesReference p : r.getListOfProducts()) {
+                                                                if (isNotCofactor(p.getSpeciesInstance())) {
+                                                                        Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
+                                                                        this.enodes.add(pNode);
+                                                                        addLane(r.getId(), pNode, n, readFluxes.get(r.getId()));
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                        for (SpeciesReference re : r.getListOfProducts()) {
+                                                if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
+                                                        for (SpeciesReference p : r.getListOfReactants()) {
+                                                                if (isNotCofactor(p.getSpeciesInstance())) {
+                                                                        Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
+                                                                        this.enodes.add(pNode);
+                                                                        addLane(r.getId() + "rev", pNode, n, readFluxes.get(r.getId()));
+                                                                }
                                                         }
                                                 }
                                         }
                                 }
-                                for (SpeciesReference re : r.getListOfProducts()) {
-                                        if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
-                                                for (SpeciesReference p : r.getListOfReactants()) {
-                                                        if (isNotCofactor(p.getSpeciesInstance())) {
-                                                                Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
-                                                                this.enodes.add(pNode);
-                                                                addLane(r.getId() + "rev", pNode, n);
-                                                        }
-                                                }
-                                        }
-                                }
-
                         }
                 }
 
         }
 
-        private void addLane(String laneId, Node source, Node target) {
-                Edge lane = new Edge(laneId, source, target, 10);
+        private void addLane(String laneId, Node source, Node target, double fluxes) {
+                String label = laneId + " / " + String.valueOf(fluxes);
+                Edge lane = new Edge(laneId, label, source, target, 10);
                 eedges.add(lane);
         }
 
         private boolean isNotInEdges(String id) {
-                for (Edge e : fedges) {
+                for(Edge e : fedges){
                         String eid = e.getId().replace("rev", "");
-                        if (id.equals(eid)) {
+                        if(id.equals(eid)){
                                 return false;
                         }
                 }

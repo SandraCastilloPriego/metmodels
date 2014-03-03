@@ -15,19 +15,20 @@
  * MetModels; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
-package MM.modules.dataanalysis.search_pathway2points;
+package MM.modules.dataanalysis.search_pathway2pointsFluxes;
 
 import MM.data.Dataset;
 import MM.main.MMCore;
 import MM.parameters.Parameter;
 import MM.parameters.SimpleParameterSet;
 import MM.parameters.parametersType.ComboParameter;
+import MM.parameters.parametersType.FileNameParameter;
 import MM.parameters.parametersType.IntegerParameter;
 import MM.parameters.parametersType.MultiChoiceParameter;
 import MM.parameters.parametersType.StringParameter;
 import MM.util.dialogs.ExitCode;
 
-public class SearchPathwaysTwoPointsParameters extends SimpleParameterSet {        
+public class SearchPathwaysTwoPointsFluxesParameters extends SimpleParameterSet {        
 
         public static final ComboParameter data = new ComboParameter("Search in model: ", "Choose the model where you want to search", new String[0]);
         public static final StringParameter idFrom = new StringParameter("Id of the initial compound", "Write the id of the compound where the pathway is starting");
@@ -47,10 +48,13 @@ public class SearchPathwaysTwoPointsParameters extends SimpleParameterSet {
                 "C00040"};
         public static final MultiChoiceParameter removing = new MultiChoiceParameter("Compounds removed from the pathway search",
                 "Compounds removed from the comparison of the pathway search", choices);      
+
+        public static final FileNameParameter fileName = new FileNameParameter("Fluxes file", "Set the path of the file containing the fluxes", null);
         public static final IntegerParameter expansion = new IntegerParameter("Level of expansion", "See more nodes connected to the main path",1);
 
-        public SearchPathwaysTwoPointsParameters() {
-                super(new Parameter[]{data, expansion, idFrom, idTo, removing});
+        
+        public SearchPathwaysTwoPointsFluxesParameters() {
+                super(new Parameter[]{fileName, expansion, data, idFrom, idTo, removing});
         }
 
         @Override
@@ -61,7 +65,7 @@ public class SearchPathwaysTwoPointsParameters extends SimpleParameterSet {
                         names[i] = dataset[i].getDatasetName();
                 }
                 
-                getParameter(SearchPathwaysTwoPointsParameters.data).setChoices(names);                
+                getParameter(SearchPathwaysTwoPointsFluxesParameters.data).setChoices(names);                
                
                 return super.showSetupDialog();
         }

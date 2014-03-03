@@ -31,7 +31,11 @@ import MM.modules.utils.printreactions.PrintReactionsModule;
 import MM.modules.utils.printspecies.PrintSpeciesModule;
 import MM.modules.dataanalysis.search_pathway.SearchPathwaysModule;
 import MM.modules.dataanalysis.search_pathway2points.SearchPathwaysTwoPointsModule;
+import MM.modules.dataanalysis.search_pathway2pointsFluxes.SearchPathwaysTwoPointsFluxesModule;
 import MM.modules.dataanalysis.search_reaction.SearchReactionsModule;
+import MM.modules.database.neo4j.addModel.AddModelModule;
+import MM.modules.database.neo4j.modelRelationships.CombineModelModule;
+import MM.modules.reconstruction.gapfilling.GapFillingModule;
 
 /**
  * List of modules included in MM
@@ -52,7 +56,11 @@ public class MMModulesList {
               PrintAllSpeciesModule.class,
               GetPubchemInfoModule.class,
               CellDesignerModule.class,
-              CellDesignerNamesModule.class
+              CellDesignerNamesModule.class,
+              AddModelModule.class,
+              CombineModelModule.class,
+              SearchPathwaysTwoPointsFluxesModule.class,
+              GapFillingModule.class
 
         };
 }

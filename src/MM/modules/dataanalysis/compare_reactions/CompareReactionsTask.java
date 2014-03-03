@@ -89,7 +89,7 @@ public class CompareReactionsTask extends AbstractTask {
                 setStatus(TaskStatus.PROCESSING);
                 try {
                         if (getStatus() == TaskStatus.PROCESSING) {
-                                addChebToRemoved();
+                               // addChebToRemoved();
 
 
                                 SBMLDocument doc1 = datasets[0].getDocument();
@@ -107,6 +107,7 @@ public class CompareReactionsTask extends AbstractTask {
 
                                 this.message = "Identifying reactions in Kegg..";
                                 double total = reactions1.size() + reactions2.size();
+                               
                                 double done = 0.0;
 
                                 for (Reaction r1 : reactions1) {
@@ -123,10 +124,11 @@ public class CompareReactionsTask extends AbstractTask {
                                         progress = (float) (done / total);
                                 }
 
-
+                         
 
                                 this.message = "Identifying species in Kegg..";
                                 total = species1.size() + species2.size();
+                                       
                                 done = 0.0;
                                 for (Species s1 : species1) {
                                         List<String> id = checkSpecieID(s1);
@@ -151,8 +153,12 @@ public class CompareReactionsTask extends AbstractTask {
                                 for (Reaction r1 : reactions1) {
                                         boolean isThere = false;
                                         for (Reaction r2 : reactions2) {
-                                                isThere = comparingReactionsRRPP(r1, speciesid1, r2, speciesid2);
-
+                                                if(r1.getId().contains(r2.getId())||r2.getId().contains(r1.getId())){
+                                                        isThere=true; 
+                                                }
+                                                //isThere = comparingReactionsRRPP(r1, speciesid1, r2, speciesid2);
+                                                
+                                      
                                                 if (isThere) {
                                                         List<Reaction> reactions = common.get(r1);
                                                         if (reactions == null) {
@@ -160,7 +166,8 @@ public class CompareReactionsTask extends AbstractTask {
                                                         }
                                                         reactions.add(r2);
                                                         common.put(r1, reactions);
-                                                } else {
+                                                        break;
+                                                } /*else {
                                                         isThere = comparingReactionsRPRP(r1, speciesid1, r2, speciesid2);
                                                         if (isThere) {
                                                                 List<Reaction> reactions = common.get(r1);
@@ -171,9 +178,11 @@ public class CompareReactionsTask extends AbstractTask {
                                                                 common.put(r1, reactions);
                                                         }
                                                         
-                                                }
+                                                }*/
+                                                
                                         }
-
+                                        
+                                        
                                         done++;
                                         progress = (float) (done / total);
                                 }
@@ -537,7 +546,7 @@ public class CompareReactionsTask extends AbstractTask {
         private List<String> checkSpecieID(Species s1) {
                 List<String> ids = new ArrayList<>();
 
-                if (s1.getId().contains("C")) {
+                /*if (s1.getId().contains("C")) {
                         ids.add(s1.getId());
 
                 }
@@ -570,13 +579,15 @@ public class CompareReactionsTask extends AbstractTask {
 
                 } catch (Exception ex) {
                         //System.out.println(s1.getAnnotationString());                      
-                }
+                }*/
+                ids.add(s1.getId());
 
                 return ids;
         }
 
         private void printResultsFile(ListOf<Reaction> reactions1, ListOf<Reaction> reactions2) {
                 try {
+                        System.out.println(this.fileName.getAbsolutePath());
                         CsvWriter w = new CsvWriter(this.fileName.getAbsolutePath());
                         String[] data = new String[8];
                         data[0] = "ID";
@@ -634,7 +645,7 @@ public class CompareReactionsTask extends AbstractTask {
 
         private String[] printReactionCSV(Reaction r1, Reaction r2) {
                 String[] data = new String[8];
-                data[0] = r1.getId();
+                data[0] = r1.getMetaId().substring(5);
                 data[1] = r1.getName();
                 String results = "";
 
@@ -649,8 +660,8 @@ public class CompareReactionsTask extends AbstractTask {
                         results = results.concat("ID: ");
                         for (String id : ids) {
                                 results = results.concat(id + ",");
-                        }
-                        results = results = results.concat("-Name: " + s.getName() + ";");
+                        }                       
+                        results = results.concat("-Name: " + s.getName() + ";");
                 }
 
                 data[2] = results;
@@ -670,7 +681,7 @@ public class CompareReactionsTask extends AbstractTask {
                 }
                 data[3] = results;
 
-                data[4] = r2.getId();
+                data[4] = r2.getMetaId().substring(5);
                 data[5] = r2.getName();
 
                 results = "";
@@ -716,10 +727,10 @@ public class CompareReactionsTask extends AbstractTask {
                 ListOf<SpeciesReference> products = r.getListOfProducts();
 
                 if (dataset == 1) {
-                        data[0] = r.getId();
+                        data[0] = r.getMetaId().substring(5);
                         data[1] = r.getName();
                 } else {
-                        data[4] = r.getId();
+                        data[4] = r.getMetaId().substring(5);
                         data[5] = r.getName();
                 }
                 String results = "";
