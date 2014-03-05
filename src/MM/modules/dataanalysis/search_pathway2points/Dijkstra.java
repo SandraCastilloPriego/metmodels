@@ -1,8 +1,10 @@
+package MM.modules.dataanalysis.search_pathway2points;
+
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package MM.modules.dataanalysis.search_pathway2points;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,16 +21,14 @@ import java.util.Set;
  */
 public class Dijkstra {
 
-        private final List<Node> nodes;
         private final List<Edge> edges;
         private Set<Node> settledNodes;
         private Set<Node> unSettledNodes;
+        private List<String> settledReactions;
         private Map<Node, Node> predecessors;
         private Map<Node, Integer> distance;
 
-        public Dijkstra(Graph graph) {
-                // Create a copy of the array so that we can operate on this array
-                this.nodes = new ArrayList<>(graph.getVertexes());
+        public Dijkstra(Graph graph) {               // Create a copy of the array so that we can operate on this array               
                 this.edges = new ArrayList<>(graph.getEdges());
         }
 
@@ -37,6 +37,7 @@ public class Dijkstra {
                 unSettledNodes = new HashSet<>();
                 distance = new HashMap<>();
                 predecessors = new HashMap<>();
+                settledReactions = new ArrayList<>();
                 distance.put(source, 0);
                 unSettledNodes.add(source);
                 while (unSettledNodes.size() > 0) {
@@ -44,6 +45,17 @@ public class Dijkstra {
                         settledNodes.add(node);
                         unSettledNodes.remove(node);
                         findMinimalDistances(node);
+                }
+        }
+
+        private void addSettleReaction(Node n, Node n2) {
+                for (Edge e : this.edges) {
+                        if ((e.getSource() == n && e.getDestination() == n2) || (e.getSource() == n2 && e.getDestination() == n)) {
+                                String reaction = e.getId().replace("rev", "");
+                                if (!settledReactions.contains(reaction)) {
+                                        settledReactions.add(reaction);
+                                }
+                        }
                 }
         }
 
@@ -55,6 +67,7 @@ public class Dijkstra {
                                 distance.put(target, getShortestDistance(node)
                                         + getDistance(node, target));
                                 predecessors.put(target, node);
+                                this.addSettleReaction(target, node);
                                 unSettledNodes.add(target);
                         }
                 }
@@ -75,7 +88,7 @@ public class Dijkstra {
                 List<Node> neighbors = new ArrayList<>();
                 for (Edge edge : edges) {
                         if (edge.getSource().equals(node)
-                                && !isSettled(edge.getDestination())) {
+                                && !isSettled(edge.getDestination()) && !isReactionSettled(edge)) {
                                 neighbors.add(edge.getDestination());
                         }
                 }
@@ -128,5 +141,12 @@ public class Dijkstra {
                 // Put it into the correct order
                 Collections.reverse(path);
                 return path;
+        }
+
+        private boolean isReactionSettled(Edge edge) {
+                if (this.settledReactions.contains(edge.getId().replace("rev", ""))) {
+                        return true;
+                }
+                return false;
         }
 }

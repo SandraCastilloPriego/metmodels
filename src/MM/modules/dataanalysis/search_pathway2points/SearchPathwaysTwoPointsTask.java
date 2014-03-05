@@ -22,15 +22,35 @@ import MM.main.MMCore;
 import MM.parameters.ParameterSet;
 import MM.taskcontrol.AbstractTask;
 import MM.taskcontrol.TaskStatus;
+import edu.uci.ics.jung.algorithms.layout.KKLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.SparseMultigraph;
+import edu.uci.ics.jung.graph.util.EdgeType;
+import edu.uci.ics.jung.visualization.VisualizationViewer;
+import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
+import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Paint;
+import java.awt.Stroke;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JInternalFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import org.apache.commons.collections15.Transformer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.sbml.jsbml.*;
@@ -49,11 +69,13 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
         private JInternalFrame frame;
         private JScrollPane panel;
         private JTextArea tf;
-        private List<Node> nodes, fnodes, enodes;
-        private List<Edge> edges, fedges, eedges;
+        private JPanel pn;
+        private List<Node> nodes, enodes;
+        private List<Edge> edges, eedges;
         private Map<String, Integer> location;
         private Model m;
-        private int expansion;
+        private int k;
+        private String file;
 
         public SearchPathwaysTwoPointsTask(Dataset[] datasets, ParameterSet parameters) {
                 this.datasets = datasets;
@@ -61,13 +83,14 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 this.initialId = (String) parameters.getParameter(SearchPathwaysTwoPointsParameters.idFrom).getValue();
                 this.finalId = (String) parameters.getParameter(SearchPathwaysTwoPointsParameters.idTo).getValue();
                 this.toBeRemoved = (String[]) parameters.getParameter(SearchPathwaysTwoPointsParameters.removing).getValue();
-                this.expansion = parameters.getParameter(SearchPathwaysTwoPointsParameters.expansion).getValue();
-
+                this.k = parameters.getParameter(SearchPathwaysTwoPointsParameters.k).getValue();
+                this.file = parameters.getParameter(SearchPathwaysTwoPointsParameters.fileName).getValue().getAbsolutePath();
 
                 this.frame = new JInternalFrame("Result", true, true, true, true);
 
                 this.tf = new JTextArea();
-                this.panel = new JScrollPane(tf);
+                this.pn = new JPanel();
+                this.panel = new JScrollPane(pn);
         }
 
         @Override
@@ -90,8 +113,6 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 try {
                         nodes = new ArrayList<>();
                         edges = new ArrayList<>();
-                        fnodes = new ArrayList<>();
-                        fedges = new ArrayList<>();
                         enodes = new ArrayList<>();
                         eedges = new ArrayList<>();
                         location = new HashMap<>();
@@ -117,15 +138,17 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
 
                                 // creates the network representation
                                 this.createNetwork();
-                                boolean working = true;
-                                while (working) {
+                                List<Graph> paths = new ArrayList<>();
+
+                                for (int exp = 0; exp < k; exp++) {
                                         try {
+                                                List<Node> fnodes = new ArrayList<>();
+                                                List<Edge> fedges = new ArrayList<>();
                                                 Graph graph = new Graph(nodes, edges);
                                                 Dijkstra dijkstra = new Dijkstra(graph);
                                                 dijkstra.execute(nodes.get(location.get(this.initialId)));
                                                 LinkedList<Node> path = dijkstra.getPath(nodes.get(location.get(this.finalId)));
                                                 if (path.size() == 0) {
-                                                        working = false;
                                                         break;
                                                 }
                                                 for (int i = 0; i < path.size(); i++) {
@@ -138,12 +161,14 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                                                                 this.edges.remove(e);
                                                         }
                                                 }
+                                                paths.add(new Graph(fnodes, fedges));
+
                                         } catch (Exception e) {
-                                                working = false;
                                         }
                                 }
-                                expansion();
-                                printPathway();
+                                // k();
+                                printPathway3(paths);
+                                printPathway(paths);
                         }
 
 
@@ -163,7 +188,54 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 return null;
         }
 
-        private void printPathway() {
+        private void printPathway3(List<Graph> paths) {
+
+                edu.uci.ics.jung.graph.Graph<String, String> g = new SparseMultigraph<>();
+                for (Graph ga : paths) {
+                        List<Node> fnodes = ga.getVertexes();
+                        List<Edge> fedges = ga.getEdges();
+                        for (Node node : fnodes) {
+                                g.addVertex(node.getId() +" - "+ node.getName());
+                        }
+                        for (Edge e : fedges) {
+                                Node source = e.getSource();
+                                Node target = e.getDestination();
+                                g.addEdge(e.getId(), source.getId() +" - "+ source.getName(), target.getId() +" - "+ target.getName(), EdgeType.DIRECTED);
+                        }
+                }
+                Layout<String, String> layout = new KKLayout(g);
+                layout.setSize(new Dimension(1400, 1000)); // sets the initial size of the space
+                VisualizationViewer<String, String> vv = new VisualizationViewer<>(layout);
+                vv.setPreferredSize(new Dimension(1400, 1000));
+                Transformer<String, Paint> vertexPaint = new Transformer<String, Paint>() {
+                        public Paint transform(String i) {
+                                return Color.GREEN;
+                        }
+                };
+
+                float dash[] = {1.0f};
+                final Stroke edgeStroke = new BasicStroke(1.0f, BasicStroke.CAP_ROUND,
+                        BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
+                Transformer<String, Stroke> edgeStrokeTransformer =
+                        new Transformer<String, Stroke>() {
+                        public Stroke transform(String s) {
+                                return edgeStroke;
+                        }
+                };
+                vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
+                vv.getRenderContext().setEdgeStrokeTransformer(edgeStrokeTransformer);
+                vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
+                vv.getRenderContext().setEdgeLabelTransformer(new ToStringLabeller());
+                vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
+
+                DefaultModalGraphMouse gm = new DefaultModalGraphMouse();
+                gm.setMode(ModalGraphMouse.Mode.PICKING);
+                vv.setGraphMouse(gm);
+                vv.addKeyListener(gm.getModeKeyListener());
+                pn.add(vv);
+        }
+
+        private void printPathway(List<Graph> paths) {
                 String text = this.tf.getText();
 
                 String initial = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?> <graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">";
@@ -185,83 +257,100 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 text = text.concat(opening + "\n");
 
 
-
-
-                for (Node node : fnodes) {
-                        String n = "\t <node id=\"" + node.getId() + "\">\n\t\t<data key=\"d6\">\n"
-                                + "\t\t\t<y:ShapeNode>\n"
-                                + "\t\t\t\t<y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\"  modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">" + node.getId() + " - " + node.getName() + "</y:NodeLabel>\n"
-                                + "\t\t\t</y:ShapeNode>\n"
-                                + "\t\t</data>\n"
-                                + "\t</node>";
-                        text = text.concat(n + "\n");
-                }
-
-                for (Node node : enodes) {
-                        String n = "\t <node id=\"" + node.getId() + "\">\n\t\t<data key=\"d6\">\n"
-                                + "\t\t\t<y:ShapeNode>\n"
-                                + "\t\t\t\t<y:Fill color=\"#FF0000\" transparent=\"false\"/>"
-                                + "\t\t\t\t<y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\"  modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">" + node.getId() + " - " + node.getName() + "</y:NodeLabel>\n"
-                                + "\t\t\t</y:ShapeNode>\n"
-                                + "\t\t</data>\n"
-                                + "\t</node>";
-                        text = text.concat(n + "\n");
-                }
-
-                for (Edge e : fedges) {
-                        String source = null, destination = null, arrowSource = "none", arrowTarget = "none";
-                        if (e.getId().contains("rev")) {
-                                destination = e.getSource().getId();
-                                source = e.getDestination().getId();
-                                arrowSource = "standard";
-                        } else {
-                                source = e.getSource().getId();
-                                destination = e.getDestination().getId();
-                                arrowTarget = "standard";
+                for (Graph g : paths) {
+                        List<Node> fnodes = g.getVertexes();
+                        List<Edge> fedges = g.getEdges();
+                        for (Node node : fnodes) {
+                                String n = "\t <node id=\"" + node.getId() + "\">\n\t\t<data key=\"d6\">\n"
+                                        + "\t\t\t<y:ShapeNode>\n"
+                                        + "\t\t\t\t<y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\"  modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">" + node.getId() + " - " + node.getName() + "</y:NodeLabel>\n"
+                                        + "\t\t\t</y:ShapeNode>\n"
+                                        + "\t\t</data>\n"
+                                        + "\t</node>";
+                                text = text.concat(n + "\n");
                         }
-                        String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
-                                + "\t\t\t<y:PolyLineEdge>\n"
-                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getId()
-                                + "\t\t\t\t</y:EdgeLabel>"
-                                + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
-                                + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
-                                + "\t\t\t\t<y:Arrows source=\"" + arrowSource + "\" target=\"" + arrowTarget + "\"/>\n"
-                                + "\t\t\t\t<y:BendStyle smoothed=\"false\"/>\n"
-                                + "\t\t\t</y:PolyLineEdge>\n"
-                                + "\t\t</data>\n"
-                                + "\t</edge>";
-                        text = text.concat(ed + "\n");
-                }
 
-                for (Edge e : eedges) {
-                        String source = null, destination = null, arrowSource = "none", arrowTarget = "none";
-                        if (e.getId().contains("rev")) {
-                                destination = e.getSource().getId();
-                                source = e.getDestination().getId();
-                                arrowSource = "standard";
-                        } else {
-                                source = e.getSource().getId();
-                                destination = e.getDestination().getId();
-                                arrowTarget = "standard";
+                        /* for (Node node : enodes) {
+                         String n = "\t <node id=\"" + node.getId() + "\">\n\t\t<data key=\"d6\">\n"
+                         + "\t\t\t<y:ShapeNode>\n"
+                         + "\t\t\t\t<y:Fill color=\"#FF0000\" transparent=\"false\"/>"
+                         + "\t\t\t\t<y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\"  modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">" + node.getId() + " - " + node.getName() + "</y:NodeLabel>\n"
+                         + "\t\t\t</y:ShapeNode>\n"
+                         + "\t\t</data>\n"
+                         + "\t</node>";
+                         text = text.concat(n + "\n");
+                         }*/
+
+                        for (Edge e : fedges) {
+                                String source = null, destination = null, arrowSource = "none", arrowTarget = "none";
+                                if (e.getId().contains("rev")) {
+                                        destination = e.getSource().getId();
+                                        source = e.getDestination().getId();
+                                        arrowSource = "standard";
+                                } else {
+                                        source = e.getSource().getId();
+                                        destination = e.getDestination().getId();
+                                        arrowTarget = "standard";
+                                }
+                                String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
+                                        + "\t\t\t<y:PolyLineEdge>\n"
+                                        + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getId()
+                                        + "\t\t\t\t</y:EdgeLabel>"
+                                        + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
+                                        + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
+                                        + "\t\t\t\t<y:Arrows source=\"" + arrowSource + "\" target=\"" + arrowTarget + "\"/>\n"
+                                        + "\t\t\t\t<y:BendStyle smoothed=\"false\"/>\n"
+                                        + "\t\t\t</y:PolyLineEdge>\n"
+                                        + "\t\t</data>\n"
+                                        + "\t</edge>";
+                                text = text.concat(ed + "\n");
                         }
-                        String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
-                                + "\t\t\t<y:PolyLineEdge>\n"
-                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getId()
-                                + "\t\t\t\t</y:EdgeLabel>"
-                                + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
-                                + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
-                                + "\t\t\t\t<y:Arrows source=\"" + arrowSource + "\" target=\"" + arrowTarget + "\"/>\n"
-                                + "\t\t\t\t<y:BendStyle smoothed=\"false\"/>\n"
-                                + "\t\t\t</y:PolyLineEdge>\n"
-                                + "\t\t</data>\n"
-                                + "\t</edge>";
-                        text = text.concat(ed + "\n");
+
+                        /*for (Edge e : eedges) {
+                         String source = null, destination = null, arrowSource = "none", arrowTarget = "none";
+                         if (e.getId().contains("rev")) {
+                         destination = e.getSource().getId();
+                         source = e.getDestination().getId();
+                         arrowSource = "standard";
+                         } else {
+                         source = e.getSource().getId();
+                         destination = e.getDestination().getId();
+                         arrowTarget = "standard";
+                         }
+                         String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
+                         + "\t\t\t<y:PolyLineEdge>\n"
+                         + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getId()
+                         + "\t\t\t\t</y:EdgeLabel>"
+                         + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
+                         + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
+                         + "\t\t\t\t<y:Arrows source=\"" + arrowSource + "\" target=\"" + arrowTarget + "\"/>\n"
+                         + "\t\t\t\t<y:BendStyle smoothed=\"false\"/>\n"
+                         + "\t\t\t</y:PolyLineEdge>\n"
+                         + "\t\t</data>\n"
+                         + "\t</edge>";
+                         text = text.concat(ed + "\n");
+                         }*/
                 }
 
                 String fin = "</graph>\n</graphml>";
                 text = text.concat(fin + "\n");
 
                 this.tf.setText(text);
+
+                Writer writer = null;
+
+                try {
+                        writer = new BufferedWriter(new OutputStreamWriter(
+                                new FileOutputStream(this.file), "utf-8"));
+                        writer.write(text);
+                } catch (IOException ex) {
+                        // report
+                } finally {
+                        try {
+                                writer.close();
+                        } catch (Exception ex) {
+                        }
+                }
         }
 
         private boolean isNotCofactor(Species p) {
@@ -314,55 +403,55 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 edges.add(lane);
         }
 
-        private void expansion() {
-                for (Node n : this.fnodes) {
-                        getReactionConnected(n);
-                }
-        }
+        /*private void k() {
+         for (Node n : this.fnodes) {
+         getReactionConnected(n);
+         }
+         }
 
-        private void getReactionConnected(Node n) {                
-                for (Reaction r : m.getListOfReactions()) {
-                        if (isNotInEdges(r.getId())) {
-                               for (SpeciesReference re : r.getListOfReactants()) {
-                                        if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
-                                               for (SpeciesReference p : r.getListOfProducts()) {
-                                                        if (isNotCofactor(p.getSpeciesInstance())) {
-                                                                Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
-                                                                this.enodes.add(pNode);
-                                                                addLane(r.getId(), pNode, n);
-                                                        }
-                                                }
-                                        }
-                                }
-                                for (SpeciesReference re : r.getListOfProducts()) {
-                                        if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
-                                                for (SpeciesReference p : r.getListOfReactants()) {
-                                                        if (isNotCofactor(p.getSpeciesInstance())) {
-                                                                Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
-                                                                this.enodes.add(pNode);
-                                                                addLane(r.getId() + "rev", pNode, n);
-                                                        }
-                                                }
-                                        }
-                                }
+         private void getReactionConnected(Node n) {
+         for (Reaction r : m.getListOfReactions()) {
+         if (isNotInEdges(r.getId())) {
+         for (SpeciesReference re : r.getListOfReactants()) {
+         if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
+         for (SpeciesReference p : r.getListOfProducts()) {
+         if (isNotCofactor(p.getSpeciesInstance())) {
+         Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
+         this.enodes.add(pNode);
+         addLane(r.getId(), pNode, n);
+         }
+         }
+         }
+         }
+         for (SpeciesReference re : r.getListOfProducts()) {
+         if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
+         for (SpeciesReference p : r.getListOfReactants()) {
+         if (isNotCofactor(p.getSpeciesInstance())) {
+         Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
+         this.enodes.add(pNode);
+         addLane(r.getId() + "rev", pNode, n);
+         }
+         }
+         }
+         }
 
-                        }
-                }
+         }
+         }
 
-        }
+         }
 
-        private void addLane(String laneId, Node source, Node target) {
-                Edge lane = new Edge(laneId, source, target, 10);
-                eedges.add(lane);
-        }
+         private void addLane(String laneId, Node source, Node target) {
+         Edge lane = new Edge(laneId, source, target, 10);
+         eedges.add(lane);
+         }
 
-        private boolean isNotInEdges(String id) {
-                for (Edge e : fedges) {
-                        String eid = e.getId().replace("rev", "");
-                        if (id.equals(eid)) {
-                                return false;
-                        }
-                }
-                return true;
-        }
+         private boolean isNotInEdges(String id) {
+         for (Edge e : fedges) {
+         String eid = e.getId().replace("rev", "");
+         if (id.equals(eid)) {
+         return false;
+         }
+         }
+         return true;
+         }*/
 }

@@ -22,6 +22,7 @@ import MM.main.MMCore;
 import MM.parameters.Parameter;
 import MM.parameters.SimpleParameterSet;
 import MM.parameters.parametersType.ComboParameter;
+import MM.parameters.parametersType.FileNameParameter;
 import MM.parameters.parametersType.IntegerParameter;
 import MM.parameters.parametersType.MultiChoiceParameter;
 import MM.parameters.parametersType.StringParameter;
@@ -47,10 +48,11 @@ public class SearchPathwaysTwoPointsParameters extends SimpleParameterSet {
                 "C00040"};
         public static final MultiChoiceParameter removing = new MultiChoiceParameter("Compounds removed from the pathway search",
                 "Compounds removed from the comparison of the pathway search", choices);      
-        public static final IntegerParameter expansion = new IntegerParameter("Level of expansion", "See more nodes connected to the main path",1);
-
+        public static final IntegerParameter k = new IntegerParameter("k", "Number of path the algorithm is going to find",1);
+        public static final FileNameParameter fileName = new FileNameParameter("Save the file", "Save the file", null);
+        
         public SearchPathwaysTwoPointsParameters() {
-                super(new Parameter[]{data, expansion, idFrom, idTo, removing});
+                super(new Parameter[]{fileName, data, k, idFrom, idTo, removing});
         }
 
         @Override
