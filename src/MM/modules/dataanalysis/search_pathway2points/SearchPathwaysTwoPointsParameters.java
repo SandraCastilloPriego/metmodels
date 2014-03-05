@@ -21,6 +21,7 @@ import MM.data.Dataset;
 import MM.main.MMCore;
 import MM.parameters.Parameter;
 import MM.parameters.SimpleParameterSet;
+import MM.parameters.parametersType.BooleanParameter;
 import MM.parameters.parametersType.ComboParameter;
 import MM.parameters.parametersType.FileNameParameter;
 import MM.parameters.parametersType.IntegerParameter;
@@ -50,9 +51,9 @@ public class SearchPathwaysTwoPointsParameters extends SimpleParameterSet {
                 "Compounds removed from the comparison of the pathway search", choices);      
         public static final IntegerParameter k = new IntegerParameter("k", "Number of path the algorithm is going to find",1);
         public static final FileNameParameter fileName = new FileNameParameter("Save the file", "Save the file", null);
-        
+        public static final BooleanParameter extension = new BooleanParameter("Extend grap", "Plot more nodes around the path", false);
         public SearchPathwaysTwoPointsParameters() {
-                super(new Parameter[]{fileName, data, k, idFrom, idTo, removing});
+                super(new Parameter[]{fileName, data, k, idFrom, idTo, extension, removing});
         }
 
         @Override

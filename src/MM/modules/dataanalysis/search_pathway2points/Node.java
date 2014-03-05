@@ -12,10 +12,12 @@ public class Node {
 
         final private String id;
         final private String name;
+        final private boolean extended;
 
-        public Node(String id, String name) {
+        public Node(String id, String name, boolean extended) {
                 this.id = id;
                 this.name = name;
+                this.extended = extended;
         }
 
         public String getId() {
@@ -24,6 +26,10 @@ public class Node {
 
         public String getName() {
                 return name;
+        }
+        
+        public boolean isExtended() {
+                return extended;
         }
 
         @Override
