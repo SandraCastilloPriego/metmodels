@@ -52,8 +52,6 @@ import javax.swing.JScrollPane;
 import org.apache.commons.collections15.Transformer;
 import org.apache.commons.collections15.functors.ChainedTransformer;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.sbml.jsbml.*;
 
 /**
@@ -272,12 +270,8 @@ public class SearchPathwaysTwoPointsTask extends AbstractTask {
                 vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
                 vv.getRenderContext().setEdgeStrokeTransformer(edgeStrokeTransformer);
                 vv.getRenderContext().getEdgeLabelRenderer().setRotateEdgeLabels(false);
-                //vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
                 vv.getRenderContext().setEdgeLabelTransformer(labelTransformer);
                 vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
-
-                // vv.getRenderContext().setLabelOffset(30);
-
                 DefaultModalGraphMouse gm = new DefaultModalGraphMouse();
                 gm.setMode(ModalGraphMouse.Mode.PICKING);
                 vv.setGraphMouse(gm);
