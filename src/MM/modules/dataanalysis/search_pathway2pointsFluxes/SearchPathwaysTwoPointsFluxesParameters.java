@@ -21,6 +21,7 @@ import MM.data.Dataset;
 import MM.main.MMCore;
 import MM.parameters.Parameter;
 import MM.parameters.SimpleParameterSet;
+import MM.parameters.parametersType.BooleanParameter;
 import MM.parameters.parametersType.ComboParameter;
 import MM.parameters.parametersType.FileNameParameter;
 import MM.parameters.parametersType.IntegerParameter;
@@ -45,16 +46,17 @@ public class SearchPathwaysTwoPointsFluxesParameters extends SimpleParameterSet 
                 "C02185", "C05819", "C90001", "C90002", "C00390", "C01080", "C00288", "C00115", "C00698", "C11481", "C01478", "C00320", "C00058",
                 "C00014", "C00206", "C00017", "C00018", "C00019", "C00021", "C00022", "C00023", "C00024", "C00025", "C00026", "C00032", "C00114",
                 "C00145", "C00146", "C00201", "C06089", "C01417", "CHEBI16144", "CHEBI22984", "CHEBI26078", "C19970", "Cluster4564", "Cluster4563",
-                "C00040"};
+                "C00040", "C00069", "CHEBI17909"};
         public static final MultiChoiceParameter removing = new MultiChoiceParameter("Compounds removed from the pathway search",
                 "Compounds removed from the comparison of the pathway search", choices);      
 
         public static final FileNameParameter fileName = new FileNameParameter("Fluxes file", "Set the path of the file containing the fluxes", null);
-        public static final IntegerParameter expansion = new IntegerParameter("Level of expansion", "See more nodes connected to the main path",1);
-
+        public static final IntegerParameter k = new IntegerParameter("k", "Number of path the algorithm is going to find",1);
+        public static final FileNameParameter saveName = new FileNameParameter("Save the file", "Save the file", null);
+        public static final BooleanParameter extension = new BooleanParameter("Extend graph", "Plot more nodes around the path", false);
         
         public SearchPathwaysTwoPointsFluxesParameters() {
-                super(new Parameter[]{fileName, expansion, data, idFrom, idTo, removing});
+                super(new Parameter[]{fileName, saveName, k, extension, data, idFrom, idTo, removing});
         }
 
         @Override

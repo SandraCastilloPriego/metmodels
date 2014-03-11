@@ -54,7 +54,7 @@ public class SearchPathwaysTwoPointsFluxesModule implements MMProcessingModule {
 
         @Override
         public MMModuleCategory getModuleCategory() {
-                return MMModuleCategory.UTILS;
+                return MMModuleCategory.NETWORK;
         }
 
         @Override

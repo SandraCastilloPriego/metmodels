@@ -51,7 +51,8 @@ public class Dijkstra {
         private void addSettleReaction(Node n, Node n2) {
                 for (Edge e : this.edges) {
                         if ((e.getSource() == n && e.getDestination() == n2) || (e.getSource() == n2 && e.getDestination() == n)) {
-                                String reaction = e.getId().replace("rev", "");
+                                String[] name = e.getId().split("-");
+                                String reaction = name[0].replace("rev", "");
                                 if (!settledReactions.contains(reaction)) {
                                         settledReactions.add(reaction);
                                 }
@@ -144,7 +145,8 @@ public class Dijkstra {
         }
 
         private boolean isReactionSettled(Edge edge) {
-                if (this.settledReactions.contains(edge.getId().replace("rev", ""))) {
+                String[] name = edge.getId().split("-");               
+                if (this.settledReactions.contains(name[0].replace("rev", ""))) {
                         return true;
                 }
                 return false;

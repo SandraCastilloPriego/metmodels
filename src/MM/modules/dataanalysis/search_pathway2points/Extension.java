@@ -37,7 +37,9 @@ public class Extension {
         private List<Graph> paths, newPaths;
         private List<Node> nodes;
         private List<Edge> edges;
+        private int count = 0;
 
+        
         public Extension(Model m, String[] toBeRemoved, List<Graph> paths) {
                 this.m = m;
                 this.toBeRemoved = toBeRemoved;
@@ -55,43 +57,61 @@ public class Extension {
                         edges.addAll(g.getEdges());
                         for (Node n : g.getVertexes()) {
                                 try {
-                                        getReactionConnected(n, nodes, edges);
+                                        getReactionConnected(n);
 
                                 } catch (Exception e) {
                                         System.out.println(e.toString());
                                 }
                         }
-
-                        Graph newG = new Graph(nodes, this.removeRepeatedEdges(edges));
+                        
+                        //edges = this.removeRepeatedEdges(edges);
+                      //  nodes = this.removeOrphanNodes(nodes, edges);
+                        Graph newG = new Graph(nodes, edges);
                         newPaths.add(newG);
                 }
         }
 
         public List<Edge> removeRepeatedEdges(List<Edge> pedges) {
-                List<Edge> result = new ArrayList<Edge>();
-                Set<String> ids = new HashSet<String>();
+                int i = 0;
+                List<Edge> result = new ArrayList<>();
+                Set<String> ids = new HashSet<>();
                 for (Edge item : pedges) {
                         if (ids.add(item.getId())) {
+                                result.add(item);
+                        }else{
+                                item.setId(item.getId()+"-"+i++);
                                 result.add(item);
                         }
                 }
                 return result;
         }
 
+        public List<Node> removeOrphanNodes(List<Node> pnodes, List<Edge> pedges) {  
+                List<Node> newList = new ArrayList<>();                
+                for (Node n : pnodes) {
+                        for(Edge e : pedges){
+                                if (e.getSource() == n || e.getDestination() == n) {
+                                        newList.add(n);
+                                }
+                        }
+                }
+                return newList;
+        }
+
         public List<Graph> getNewPaths() {
                 return this.newPaths;
         }
 
-        private void getReactionConnected(Node n, List<Node> pnodes, List<Edge> pedges) {
+        private void getReactionConnected(Node n) {
                 for (Reaction r : m.getListOfReactions()) {
-                        if (isNotInEdges(r.getId(), pedges)) {
+                        if (isNotInEdges(r.getId(), edges)) {
                                 for (SpeciesReference re : r.getListOfReactants()) {
                                         if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
                                                 for (SpeciesReference p : r.getListOfProducts()) {
                                                         if (isNotCofactor(p.getSpeciesInstance())) {
                                                                 Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName(), true);
-                                                                pnodes.add(pNode);
-                                                                addLane(r.getId(), pNode, n, pedges);
+                                                                nodes.add(pNode);
+                                                                addLane(r.getId()+ "-"+String.valueOf(count++), pNode, n, edges);
                                                         }
                                                 }
                                         }
@@ -101,8 +121,8 @@ public class Extension {
                                                 for (SpeciesReference p : r.getListOfReactants()) {
                                                         if (isNotCofactor(p.getSpeciesInstance())) {
                                                                 Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName(), true);
-                                                                pnodes.add(pNode);
-                                                                addLane(r.getId() + "rev", pNode, n, pedges);
+                                                                nodes.add(pNode);
+                                                                addLane(r.getId() + "rev-", pNode, n, edges);
                                                         }
                                                 }
                                         }

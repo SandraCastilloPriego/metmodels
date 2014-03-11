@@ -37,7 +37,7 @@ import javax.swing.*;
  */
 public class MainMenu extends JMenuBar implements ActionListener {
 
-        private JMenu fileMenu, utilsMenu, identificationMenu, helpMenu;
+        private JMenu fileMenu, utilsMenu, networkMenu, identificationMenu, helpMenu;
         private JWindowsMenu windowsMenu;
         private JMenuItem showAbout;
         private Map<JMenuItem, MMProcessingModule> moduleMenuItems = new HashMap<JMenuItem, MMProcessingModule>();
@@ -51,7 +51,11 @@ public class MainMenu extends JMenuBar implements ActionListener {
                 utilsMenu = new JMenu("Utils");
                 utilsMenu.setMnemonic(KeyEvent.VK_U);
                 add(utilsMenu);
-                
+
+                networkMenu = new JMenu("Network");
+                networkMenu.setMnemonic(KeyEvent.VK_N);
+                add(networkMenu);
+
                 identificationMenu = new JMenu("Identification");
                 identificationMenu.setMnemonic(KeyEvent.VK_I);
                 add(identificationMenu);
@@ -90,11 +94,15 @@ public class MainMenu extends JMenuBar implements ActionListener {
                         case UTILS:
                                 utilsMenu.add(newItem);
                                 break;
-                                
+
+                        case NETWORK:
+                                networkMenu.add(newItem);
+                                break;
+
                         case IDENTIFICATION:
                                 identificationMenu.add(newItem);
                                 break;
-                                
+
                         case HELPSYSTEM:
                                 helpMenu.add(newItem);
                                 break;
@@ -109,10 +117,13 @@ public class MainMenu extends JMenuBar implements ActionListener {
                         case UTILS:
                                 utilsMenu.addSeparator();
                                 break;
+                        case NETWORK:
+                                networkMenu.addSeparator();
+                                break;
                         case IDENTIFICATION:
                                 identificationMenu.addSeparator();
                                 break;
-                                
+
                         case HELPSYSTEM:
                                 helpMenu.addSeparator();
                                 break;

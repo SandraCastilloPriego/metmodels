@@ -19,6 +19,12 @@ package MM.modules.dataanalysis.search_pathway2pointsFluxes;
 
 import MM.data.Dataset;
 import MM.main.MMCore;
+import MM.modules.dataanalysis.search_pathway2points.Dijkstra;
+import MM.modules.dataanalysis.search_pathway2points.Edge;
+import MM.modules.dataanalysis.search_pathway2points.Extension;
+import MM.modules.dataanalysis.search_pathway2points.Graph;
+import MM.modules.dataanalysis.search_pathway2points.Node;
+import MM.modules.dataanalysis.search_pathway2points.PrintPaths;
 import MM.parameters.ParameterSet;
 import MM.taskcontrol.AbstractTask;
 import MM.taskcontrol.TaskStatus;
@@ -34,8 +40,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JInternalFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import org.sbml.jsbml.Model;
 import org.sbml.jsbml.Reaction;
 import org.sbml.jsbml.SBMLDocument;
@@ -55,13 +61,17 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
         private String[] toBeRemoved;
         private JInternalFrame frame;
         private JScrollPane panel;
-        private JTextArea tf;
-        private List<Node> nodes, fnodes, enodes;
-        private List<Edge> edges, fedges, eedges;
+        private JPanel pn;
+        private List<Node> nodes;
+        private List<Edge> edges;
         private Map<String, Integer> location;
+        HashMap<String, Double> readFluxes;
         private File fluxes;
-        private int expansion;
+        private int k;
         private Model m;
+        private String saveFile;
+        private boolean extension;
+        private int count = 0;
 
         public SearchPathwaysTwoPointsFluxesTask(Dataset[] datasets, ParameterSet parameters) {
                 this.datasets = datasets;
@@ -71,9 +81,11 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
                 this.toBeRemoved = (String[]) parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.removing).getValue();
                 this.fluxes = (File) parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.fileName).getValue();
                 this.frame = new JInternalFrame("Result", true, true, true, true);
-                this.expansion = parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.expansion).getValue();
-                this.tf = new JTextArea();
-                this.panel = new JScrollPane(tf);
+                this.k = parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.k).getValue();
+                this.saveFile = parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.saveName).getValue().getAbsolutePath();
+                this.extension = parameters.getParameter(SearchPathwaysTwoPointsFluxesParameters.extension).getValue();
+                this.pn = new JPanel();
+                this.panel = new JScrollPane(pn);
         }
 
         @Override
@@ -96,10 +108,6 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
                 try {
                         nodes = new ArrayList<>();
                         edges = new ArrayList<>();
-                        fnodes = new ArrayList<>();
-                        fedges = new ArrayList<>();
-                        enodes = new ArrayList<>();
-                        eedges = new ArrayList<>();
                         location = new HashMap<>();
                         this.findPathway();
                 } catch (Exception e) {
@@ -112,7 +120,7 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
                 setStatus(TaskStatus.PROCESSING);
                 try {
                         if (getStatus() == TaskStatus.PROCESSING) {
-                                HashMap<String, Double> readFluxes = readFluxes();
+                                readFluxes = readFluxes();
                                 // opens a frame to show the results
 
                                 frame.setSize(new Dimension(700, 500));
@@ -121,15 +129,16 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
 
                                 // creates the network representation
                                 this.createNetwork(readFluxes);
-                                boolean working = true;
-                                while (working) {
+                                List<Graph> paths = new ArrayList<>();
+                                for (int exp = 0; exp < k; exp++) {
                                         try {
+                                                List<Node> fnodes = new ArrayList<>();
+                                                List<Edge> fedges = new ArrayList<>();
                                                 Graph graph = new Graph(nodes, edges);
                                                 Dijkstra dijkstra = new Dijkstra(graph);
                                                 dijkstra.execute(nodes.get(location.get(this.initialId)));
                                                 LinkedList<Node> path = dijkstra.getPath(nodes.get(location.get(this.finalId)));
                                                 if (path.size() == 0) {
-                                                        working = false;
                                                         break;
                                                 }
                                                 for (int i = 0; i < path.size(); i++) {
@@ -142,12 +151,18 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
                                                                 this.edges.remove(e);
                                                         }
                                                 }
+                                                paths.add(new Graph(fnodes, fedges));
                                         } catch (Exception e) {
-                                                working = false;
                                         }
                                 }
-                                expansion(readFluxes);
-                                printPathway();
+                                if (extension) {
+                                        Extension ext = new Extension(this.m, this.toBeRemoved, paths);
+                                        ext.extension();
+                                        paths = ext.getNewPaths();
+                                }
+                                PrintPaths printer = new PrintPaths(this.initialId, this.finalId);
+                                this.pn.add(printer.printPathwayInFrame(paths));
+                                printer.printPathwayInFile(paths, this.saveFile);
                         }
 
 
@@ -166,110 +181,6 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
                 return null;
         }
 
-        private void printPathway() {
-                String text = this.tf.getText();
-
-                String initial = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?> <graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">";
-                text = text.concat(initial + "\n");
-
-
-
-                String opening = "\t<key for=\"graphml\" id=\"d0\" yfiles.type=\"resources\"/>"
-                        + "\t<key for=\"port\" id=\"d1\" yfiles.type=\"portgraphics\"/>"
-                        + "\t<key for=\"port\" id=\"d2\" yfiles.type=\"portgeometry\"/>"
-                        + "\t<key for=\"port\" id=\"d3\" yfiles.type=\"portuserdata\"/>"
-                        + "\t<key attr.name=\"url\" attr.type=\"string\" for=\"node\" id=\"d4\"/>"
-                        + "\t<key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>"
-                        + "\t<key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>"
-                        + "\t<key attr.name=\"url\" attr.type=\"string\" for=\"edge\" id=\"d7\"/>"
-                        + "\t<key attr.name=\"description\" attr.type=\"string\" for=\"edge\" id=\"d8\"/>"
-                        + "\t<key for=\"edge\" id=\"d9\" yfiles.type=\"edgegraphics\"/>"
-                        + "\t<graph edgedefault=\"directed\" id=\"G\">";
-                text = text.concat(opening + "\n");
-
-
-
-
-                for (Node node : fnodes) {
-                        String n = "\t <node id=\"" + node.getId() + "\">\n\t\t<data key=\"d6\">\n"
-                                + "\t\t\t<y:ShapeNode>\n"
-                                + "\t\t\t\t<y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\"  modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">" + node.getId() + " - " + node.getName() + "</y:NodeLabel>\n"
-                                + "\t\t\t</y:ShapeNode>\n"
-                                + "\t\t</data>\n"
-                                + "\t</node>";
-                        text = text.concat(n + "\n");
-                }
-
-                for (Node node : enodes) {
-                        String n = "\t <node id=\"" + node.getId() + "\">\n\t\t<data key=\"d6\">\n"
-                                + "\t\t\t<y:ShapeNode>\n"
-                                + "\t\t\t\t<y:Fill color=\"#FF0000\" transparent=\"false\"/>"
-                                + "\t\t\t\t<y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\"  modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\">" + node.getId() + " - " + node.getName() + "</y:NodeLabel>\n"
-                                + "\t\t\t</y:ShapeNode>\n"
-                                + "\t\t</data>\n"
-                                + "\t</node>";
-                        text = text.concat(n + "\n");
-                }
-
-
-
-
-                for (Edge e : fedges) {
-                        String source = null, destination = null, arrowSource = "none", arrowTarget = "none";
-                        if (e.getId().contains("rev")) {
-                                destination = e.getSource().getId();
-                                source = e.getDestination().getId();
-                                arrowSource = "standard";
-                        } else {
-                                source = e.getSource().getId();
-                                destination = e.getDestination().getId();
-                                arrowTarget = "standard";
-                        }
-                        String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
-                                + "\t\t\t<y:PolyLineEdge>\n"
-                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getLabel()
-                                + "\t\t\t\t</y:EdgeLabel>"
-                                + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
-                                + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
-                                + "\t\t\t\t<y:Arrows source=\"" + arrowSource + "\" target=\"" + arrowTarget + "\"/>\n"
-                                + "\t\t\t\t<y:BendStyle smoothed=\"false\"/>\n"
-                                + "\t\t\t</y:PolyLineEdge>\n"
-                                + "\t\t</data>\n"
-                                + "\t</edge>";
-                        text = text.concat(ed + "\n");
-                }
-
-                for (Edge e : eedges) {
-                        String source = null, destination = null, arrowSource = "none", arrowTarget = "none";
-                        if (e.getId().contains("rev")) {
-                                destination = e.getSource().getId();
-                                source = e.getDestination().getId();
-                                arrowSource = "standard";
-                        } else {
-                                source = e.getSource().getId();
-                                destination = e.getDestination().getId();
-                                arrowTarget = "standard";
-                        }
-                        String ed = "\t<edge id=\"" + e.getId() + "\" source=\"" + source + "\" target=\"" + destination + "\">\n\t\t<data key=\"d9\">\n"
-                                + "\t\t\t<y:PolyLineEdge>\n"
-                                + "\t\t\t\t<y:EdgeLabel alignment=\"center\" configuration=\"AutoFlippingLabel\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" modelName=\"custom\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"#000000\" visible=\"true\">" + e.getLabel()
-                                + "\t\t\t\t</y:EdgeLabel>"
-                                + "\t\t\t\t<y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n"
-                                + "\t\t\t\t<y:LineStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n"
-                                + "\t\t\t\t<y:Arrows source=\"" + arrowSource + "\" target=\"" + arrowTarget + "\"/>\n"
-                                + "\t\t\t\t<y:BendStyle smoothed=\"false\"/>\n"
-                                + "\t\t\t</y:PolyLineEdge>\n"
-                                + "\t\t</data>\n"
-                                + "\t</edge>";
-                        text = text.concat(ed + "\n");
-                }
-
-                String fin = "</graph>\n</graphml>";
-                text = text.concat(fin + "\n");
-
-                this.tf.setText(text);
-        }
-
         private boolean isNotCofactor(Species p) {
                 for (String toRemove : this.toBeRemoved) {
                         if (p.getId().contains(toRemove)) {
@@ -282,7 +193,7 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
         }
 
         private HashMap<String, Double> readFluxes() {
-                HashMap<String, Double> readFluxes = new HashMap<>();
+                HashMap<String, Double> rFluxes = new HashMap<>();
                 try {
 
                         CsvReader reader = new CsvReader(new FileReader(this.fluxes.getAbsolutePath()));
@@ -290,14 +201,14 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
                         String[] header = reader.getHeaders();
                         while (reader.readRecord()) {
                                 String[] data = reader.getValues();
-                                readFluxes.put(data[2], Double.parseDouble(data[1]));
+                                rFluxes.put(data[2], Double.parseDouble(data[1]));
                         }
                 } catch (FileNotFoundException ex) {
                         java.util.logging.Logger.getLogger(SearchPathwaysTwoPointsFluxesTask.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
                 } catch (IOException ex) {
                         java.util.logging.Logger.getLogger(SearchPathwaysTwoPointsFluxesTask.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
                 }
-                return readFluxes;
+                return rFluxes;
         }
 
         private void createNetwork(HashMap<String, Double> readFluxes) {
@@ -313,20 +224,20 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
                 int l = 0;
                 for (Species s : m.getListOfSpecies()) {
                         if (isNotCofactor(s)) {
-                                Node n = new Node(s.getId(), s.getName());
+                                Node n = new Node(s.getId(), s.getName(), false);
                                 nodes.add(n);
                                 location.put(n.getId(), l++);
                         }
                 }
 
                 for (Reaction r : m.getListOfReactions()) {
-                        if (Math.abs(readFluxes.get(r.getId())) > 0.0000000001) {
+                        if (Math.abs(readFluxes.get(r.getId())) > 0) {
                                 for (SpeciesReference re : r.getListOfReactants()) {
                                         if (isNotCofactor(re.getSpeciesInstance())) {
                                                 for (SpeciesReference p : r.getListOfProducts()) {
                                                         if (isNotCofactor(p.getSpeciesInstance())) {
-                                                                addLane(r.getId(), location.get(re.getSpeciesInstance().getId()), location.get(p.getSpeciesInstance().getId()), 10, readFluxes.get(r.getId()));
-                                                                addLane(r.getId() + "rev", location.get(p.getSpeciesInstance().getId()), location.get(re.getSpeciesInstance().getId()), 10, readFluxes.get(r.getId()));
+                                                                addLane(r.getId() + "-" + String.valueOf(count++), location.get(re.getSpeciesInstance().getId()), location.get(p.getSpeciesInstance().getId()), 10);
+                                                                addLane(r.getId() + "rev-" + String.valueOf(count++), location.get(p.getSpeciesInstance().getId()), location.get(re.getSpeciesInstance().getId()), 10);
                                                         }
                                                 }
                                         }
@@ -336,9 +247,8 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
         }
 
         private void addLane(String laneId, int sourceLocNo, int destLocNo,
-                int duration, double fluxes) {
-                String label = laneId + " / " + String.valueOf(fluxes);
-                Edge lane = new Edge(laneId, label, nodes.get(sourceLocNo), nodes.get(destLocNo), duration);
+                int duration) {
+                Edge lane = new Edge(laneId, nodes.get(sourceLocNo), nodes.get(destLocNo), duration);
                 edges.add(lane);
         }
 
@@ -496,57 +406,57 @@ public class SearchPathwaysTwoPointsFluxesTask extends AbstractTask {
          }
          });
          }*/
-        private void expansion(HashMap<String, Double> readFluxes) {
-                for (Node n : this.fnodes) {
-                        getReactionConnected(n, readFluxes);
-                }
-        }
+        /* private void expansion(HashMap<String, Double> readFluxes) {
+         for (Node n : this.fnodes) {
+         getReactionConnected(n, readFluxes);
+         }
+         }
 
-        private void getReactionConnected(Node n, HashMap<String, Double> readFluxes) {
-                for (Reaction r : m.getListOfReactions()) {
-                        if (isNotInEdges(r.getId())) {
-                                if (Math.abs(readFluxes.get(r.getId())) > 0.0000000001) {
-                                        for (SpeciesReference re : r.getListOfReactants()) {
-                                                if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
-                                                        for (SpeciesReference p : r.getListOfProducts()) {
-                                                                if (isNotCofactor(p.getSpeciesInstance())) {
-                                                                        Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
-                                                                        this.enodes.add(pNode);
-                                                                        addLane(r.getId(), pNode, n, readFluxes.get(r.getId()));
-                                                                }
-                                                        }
-                                                }
-                                        }
-                                        for (SpeciesReference re : r.getListOfProducts()) {
-                                                if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
-                                                        for (SpeciesReference p : r.getListOfReactants()) {
-                                                                if (isNotCofactor(p.getSpeciesInstance())) {
-                                                                        Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
-                                                                        this.enodes.add(pNode);
-                                                                        addLane(r.getId() + "rev", pNode, n, readFluxes.get(r.getId()));
-                                                                }
-                                                        }
-                                                }
-                                        }
-                                }
-                        }
-                }
+         private void getReactionConnected(Node n, HashMap<String, Double> readFluxes) {
+         for (Reaction r : m.getListOfReactions()) {
+         if (isNotInEdges(r.getId())) {
+         if (Math.abs(readFluxes.get(r.getId())) > 0.0000000001) {
+         for (SpeciesReference re : r.getListOfReactants()) {
+         if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
+         for (SpeciesReference p : r.getListOfProducts()) {
+         if (isNotCofactor(p.getSpeciesInstance())) {
+         Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
+         this.enodes.add(pNode);
+         addLane(r.getId(), pNode, n, readFluxes.get(r.getId()));
+         }
+         }
+         }
+         }
+         for (SpeciesReference re : r.getListOfProducts()) {
+         if (isNotCofactor(re.getSpeciesInstance()) && re.getSpeciesInstance().getId().equals(n.getId())) {
+         for (SpeciesReference p : r.getListOfReactants()) {
+         if (isNotCofactor(p.getSpeciesInstance())) {
+         Node pNode = new Node(p.getSpeciesInstance().getId(), p.getSpeciesInstance().getName());
+         this.enodes.add(pNode);
+         addLane(r.getId() + "rev", pNode, n, readFluxes.get(r.getId()));
+         }
+         }
+         }
+         }
+         }
+         }
+         }
 
-        }
+         }
 
-        private void addLane(String laneId, Node source, Node target, double fluxes) {
-                String label = laneId + " / " + String.valueOf(fluxes);
-                Edge lane = new Edge(laneId, label, source, target, 10);
-                eedges.add(lane);
-        }
+         private void addLane(String laneId, Node source, Node target, double fluxes) {
+         String label = laneId + " / " + String.valueOf(fluxes);
+         Edge lane = new Edge(laneId, label, source, target, 10);
+         eedges.add(lane);
+         }
 
-        private boolean isNotInEdges(String id) {
-                for(Edge e : fedges){
-                        String eid = e.getId().replace("rev", "");
-                        if(id.equals(eid)){
-                                return false;
-                        }
-                }
-                return true;
-        }
+         private boolean isNotInEdges(String id) {
+         for(Edge e : fedges){
+         String eid = e.getId().replace("rev", "");
+         if(id.equals(eid)){
+         return false;
+         }
+         }
+         return true;
+         }*/
 }

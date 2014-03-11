@@ -10,7 +10,7 @@ package MM.modules.dataanalysis.search_pathway2points;
  */
 public class Edge {
 
-        private final String id;
+        private String id;
         private final Node source;
         private final Node destination;
         private final int weight;
@@ -32,6 +32,10 @@ public class Edge {
 
         public Node getSource() {
                 return source;
+        }
+        
+        public void setId(String id) {
+                this.id = id;
         }
 
         public int getWeight() {
